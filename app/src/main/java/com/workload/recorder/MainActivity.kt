@@ -1,27 +1,19 @@
 package com.workload.recorder
 
 import android.annotation.SuppressLint
-import android.content.Intent
 import android.graphics.Bitmap
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Environment
-import android.provider.MediaStore
-import android.view.KeyEvent
 import android.view.ViewGroup
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
-import androidx.core.content.FileProvider
 import androidx.webkit.WebSettingsCompat
 import androidx.webkit.WebViewFeature
-import java.io.File
 
 class MainActivity : ComponentActivity() {
 
@@ -54,9 +46,6 @@ class MainActivity : ComponentActivity() {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     safeBrowsingEnabled = true
                 }
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    isAutofillEnabled = false
-                }
             }
 
             if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {
@@ -70,28 +59,11 @@ class MainActivity : ComponentActivity() {
                 override fun shouldOverrideUrlLoading(
                     view: WebView, request: WebResourceRequest
                 ): Boolean {
-                    val url = request.url.toString()
-                    return if (url.startsWith("http://") || url.startsWith("https://")) {
-                        false
-                    } else {
-                        false
-                    }
-                }
-
-                override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-                    super.onPageStarted(view, url, favicon)
-                }
-
-                override fun onPageFinished(view: WebView, url: String) {
-                    super.onPageFinished(view, url)
+                    return false
                 }
             }
 
-            webChromeClient = object : WebChromeClient() {
-                override fun onReceivedTitle(view: WebView, title: String) {
-                    super.onReceivedTitle(view, title)
-                }
-            }
+            webChromeClient = object : WebChromeClient() {}
 
             addJavascriptInterface(WebAppInterface(this@MainActivity, webView), "AndroidBridge")
 
