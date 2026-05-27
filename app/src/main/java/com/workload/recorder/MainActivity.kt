@@ -23,7 +23,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        webView = WebView(this).apply {
+        val wv = WebView(this).apply {
             layoutParams = FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
@@ -65,10 +65,11 @@ class MainActivity : ComponentActivity() {
 
             webChromeClient = object : WebChromeClient() {}
 
-            addJavascriptInterface(WebAppInterface(this@MainActivity, webView), "AndroidBridge")
+            addJavascriptInterface(WebAppInterface(this@MainActivity, this), "AndroidBridge")
 
             loadUrl("file:///android_asset/www/index.html")
         }
+        webView = wv
 
         setContentView(webView)
 
