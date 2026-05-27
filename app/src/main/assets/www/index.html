@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#0071E3">
+<meta name="theme-color" content="#F5F5F7">
 <meta name="application-name" content="工作量记录">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -20,7 +20,8 @@
   --text:#1d1d1f;--text2:#6e6e73;--text3:#aeaeb2;
   --accent:#0071e3;--accent-bg:rgba(0,113,227,0.08);
   --radius:14px;--shadow:0 2px 14px rgba(0,0,0,0.04);
-  --safe-bottom:env(safe-area-inset-bottom,0px)
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+  --safe-top:env(safe-area-inset-top,0px)
 }
 html,body{width:100%;min-height:100vh;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Helvetica Neue',system-ui,sans-serif;color:var(--text);-webkit-font-smoothing:antialiased;overflow-x:hidden}
 body{display:flex;flex-direction:column}
@@ -37,7 +38,7 @@ body{display:flex;flex-direction:column}
 .page.active{display:flex;flex-direction:column}
 
 /* Header */
-.hdr{display:flex;justify-content:space-between;align-items:center;padding:16px 20px 8px;position:sticky;top:0;z-index:10;background:var(--bg);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px)}
+.hdr{display:flex;justify-content:space-between;align-items:center;padding:16px 20px 8px;padding-top:calc(16px + var(--safe-top));position:sticky;top:0;z-index:10;background:var(--bg);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px)}
 .hdr h2{font-size:22px;font-weight:700;color:var(--text);letter-spacing:-0.5px}
 .hdr-icon{font-size:13px;color:var(--accent);font-weight:600;padding:6px 14px;border-radius:30px;background:var(--accent-bg);border:1px solid rgba(0,113,227,0.12);cursor:pointer;-webkit-user-select:none;user-select:none;transition:all .15s}
 .hdr-icon:active{transform:scale(0.96)}
