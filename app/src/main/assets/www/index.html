@@ -642,9 +642,9 @@ function renderWork(){
       const absenceType=typeMap[item.type]||'异常'
       const color=colorMap[item.type]||'tag-blue'
       let detail=''
-      if(item.type==='LEAVE')detail=item.leaveType+' · '+item.duration+'小时'
-      else if(item.type==='LATE')detail='迟到'+item.lateMinutes+'分钟'
-      else detail='早退'+item.earlyMinutes+'分钟'
+      if(item.type==='LEAVE')detail=item.leaveType+' · '+(item.duration||0)+'小时'
+      else if(item.type==='LATE')detail='迟到'+(item.lateMinutes||0)+'分钟'
+      else detail='早退'+(item.earlyMinutes||0)+'分钟'
       return '<div class="row" onclick="showRecordActions(\''+item.id+'\',\'absence\')"><div class="rd"><div class="d">'+dd+'</div><div class="m">'+mm+'月</div></div><div class="ri"><div class="n">'+escapeHtml(item.staffName)+'</div><div class="meta"><span class="tag '+color+'">'+absenceType+'</span> '+detail+'</div></div></div>'
     }
   }).join('')
@@ -702,12 +702,12 @@ function editRecord(id,type){
       <input type="hidden" id="editId" value="${duty.id}">
       <div class="mg"><label>值班人员</label><div class="staff-tags" id="dutyStaff">${staffChips}</div></div>
       <div class="mg"><label>班次</label><div class="chips" id="dutyShift">
-        <span class="chip ${duty.shiftType==='MORNING'?'sel':''}" onclick="selChip(this,'dutyShift','MORNING')">早班 <small>08:00-16:00</small></span>
-        <span class="chip ${duty.shiftType==='EVENING'?'sel':''}" onclick="selChip(this,'dutyShift','EVENING')">晚班 <small>14:00-22:00</small></span>
-        <span class="chip ${duty.shiftType==='ALL_DAY'?'sel':''}" onclick="selChip(this,'dutyShift','ALL_DAY')">通班 <small>08:00-22:00</small></span>
+        <span class="chip ${duty.shiftType==='MORNING'?'sel':''}" onclick="selChip(this,'dutyShift','MORNING')">早班 <small>09:00-17:00</small></span>
+        <span class="chip ${duty.shiftType==='EVENING'?'sel':''}" onclick="selChip(this,'dutyShift','EVENING')">晚班 <small>14:00-21:00</small></span>
+        <span class="chip ${duty.shiftType==='ALL_DAY'?'sel':''}" onclick="selChip(this,'dutyShift','ALL_DAY')">通班 <small>09:00-21:00</small></span>
       </div></div>
-      <div class="mg"><label>时间</label><div style="display:flex;gap:8px"><input type="time" id="dutyStart" value="${duty.startTime}"><input type="time" id="dutyEnd" value="${duty.endTime}"></div></div>
-      <div class="mg"><label>日期</label><input type="date" id="dutyDate" value="${new Date(duty.date).toISOString().slice(0,10)}"></div>
+      <div class="mg"><label>时间</label><div style="display:flex;gap:8px"><input type="time" id="dutyStart" value="${duty.startTime||'09:00'}"><input type="time" id="dutyEnd" value="${duty.endTime||'17:00'}"></div></div>
+      <div class="mg"><label>日期</label><input type="date" id="dutyDate" value="${duty.date?new Date(duty.date).toISOString().slice(0,10):new Date().toISOString().slice(0,10)}"></div>
       <div class="mg"><label>备注</label><input type="text" id="dutyRemark" value="${duty.remark||''}" placeholder="可选"></div>
       <div class="btns"><button class="btn-cancel" onclick="hideModal()">取消</button><button class="btn-confirm" onclick="saveEditedDuty()">保存</button></div>
     `)
@@ -748,7 +748,7 @@ function editRecord(id,type){
           <span class="chip ${absence.leaveType==='年假'?'sel':''}" onclick="selChip(this,'leaveType','年假')">年假</span>
           <span class="chip ${absence.leaveType==='其他'?'sel':''}" onclick="selChip(this,'leaveType','其他')">其他</span>
         </div></div>
-        <div class="mg"><label>请假时长（小时）</label><input type="number" id="leaveDuration" value="${absence.duration}" min="0.5" step="0.5"></div>
+        <div class="mg"><label>请假时长（小时）</label><input type="number" id="leaveDuration" value="${absence.duration||1}" min="0.5" step="0.5"></div>
         <div class="mg"><label>日期</label><input type="date" id="leaveDate" value="${new Date(absence.date).toISOString().slice(0,10)}"></div>
         <div class="mg"><label>备注</label><input type="text" id="leaveRemark" value="${absence.remark||''}" placeholder="可选"></div>
         <div class="btns"><button class="btn-cancel" onclick="hideModal()">取消</button><button class="btn-confirm" onclick="saveEditedAbsence()">保存</button></div>
@@ -759,7 +759,7 @@ function editRecord(id,type){
         <input type="hidden" id="editId" value="${absence.id}">
         <input type="hidden" id="editAbsenceType" value="LATE">
         <div class="mg"><label>人员</label><div class="staff-tags" id="absenceStaff">${staffChips}</div></div>
-        <div class="mg"><label>迟到时间（分钟）</label><input type="number" id="lateMinutes" value="${absence.lateMinutes}" min="1"></div>
+        <div class="mg"><label>迟到时间（分钟）</label><input type="number" id="lateMinutes" value="${absence.lateMinutes||15}" min="1"></div>
         <div class="mg"><label>日期</label><input type="date" id="lateDate" value="${new Date(absence.date).toISOString().slice(0,10)}"></div>
         <div class="mg"><label>备注</label><input type="text" id="lateRemark" value="${absence.remark||''}" placeholder="可选"></div>
         <div class="btns"><button class="btn-cancel" onclick="hideModal()">取消</button><button class="btn-confirm" onclick="saveEditedAbsence()">保存</button></div>
@@ -769,7 +769,7 @@ function editRecord(id,type){
         <input type="hidden" id="editId" value="${absence.id}">
         <input type="hidden" id="editAbsenceType" value="EARLY">
         <div class="mg"><label>人员</label><div class="staff-tags" id="absenceStaff">${staffChips}</div></div>
-        <div class="mg"><label>早退时间（分钟）</label><input type="number" id="earlyMinutes" value="${absence.earlyMinutes}" min="1"></div>
+        <div class="mg"><label>早退时间（分钟）</label><input type="number" id="earlyMinutes" value="${absence.earlyMinutes||30}" min="1"></div>
         <div class="mg"><label>日期</label><input type="date" id="earlyDate" value="${new Date(absence.date).toISOString().slice(0,10)}"></div>
         <div class="mg"><label>备注</label><input type="text" id="earlyRemark" value="${absence.remark||''}" placeholder="可选"></div>
         <div class="btns"><button class="btn-cancel" onclick="hideModal()">取消</button><button class="btn-confirm" onclick="saveEditedAbsence()">保存</button></div>
@@ -1302,7 +1302,7 @@ function editBooking(id){
   }).join('')
   showModal('修改预约',`
     <input type="hidden" id="editBookingId" value="${booking.id}">
-    <div class="mg"><label>预约主体</label><input type="text" id="editBookSubject" placeholder="如：某分会" value="${escapeHtml(booking.bookingSubject)}"></div>
+    <div class="mg"><label>预约主体</label><input type="text" id="editBookSubject" placeholder="如：某分会" value="${escapeHtml(booking.bookingSubject||'')}"></div>
     <div class="mg"><label>活动方案</label><input type="text" id="editBookPlan" placeholder="如：团建活动" value="${escapeHtml(booking.activityPlan||'')}"></div>
     <div class="mg"><label>功能区 <small style="color:var(--text3)">可多选</small></label><div class="chips" id="bookZone">${zoneChips}</div></div>
     <div class="mg"><label>时段</label><div class="chips" id="bookSlot">
@@ -1310,9 +1310,9 @@ function editBooking(id){
       <span class="chip${booking.timeSlot==='AFTERNOON'?' sel':''}" onclick="selChip(this,'bookSlot','AFTERNOON')">下午</span>
       <span class="chip${booking.timeSlot==='FULL_DAY'?' sel':''}" onclick="selChip(this,'bookSlot','FULL_DAY')">全天</span>
     </div></div>
-    <div class="mg"><label>时间</label><div style="display:flex;gap:8px"><input type="time" id="editBookStart" value="${booking.startTime}"><input type="time" id="editBookEnd" value="${booking.endTime}"></div></div>
-    <div class="mg"><label>日期</label><input type="date" id="editBookDate" value="${new Date(booking.date).toISOString().slice(0,10)}"></div>
-    <div class="mg"><label>人数</label><input type="number" id="editBookCount" value="${booking.participantCount}" min="1"></div>
+    <div class="mg"><label>时间</label><div style="display:flex;gap:8px"><input type="time" id="editBookStart" value="${booking.startTime||'08:00'}"><input type="time" id="editBookEnd" value="${booking.endTime||'12:00'}"></div></div>
+    <div class="mg"><label>日期</label><input type="date" id="editBookDate" value="${booking.date?new Date(booking.date).toISOString().slice(0,10):new Date().toISOString().slice(0,10)}"></div>
+    <div class="mg"><label>人数</label><input type="number" id="editBookCount" value="${booking.participantCount||10}" min="1"></div>
     <div class="mg"><label>对接人</label><div class="staff-tags" id="bookStaff">${staffChips||'<span style="color:var(--text3)">请先添加工作人员</span>'}</div></div>
     <div class="mg"><label>备注</label><input type="text" id="editBookRemark" placeholder="可选" value="${escapeHtml(booking.remark||'')}"></div>
     <div class="btns"><button class="btn-cancel" onclick="hideModal()">取消</button><button class="btn-confirm" onclick="saveEditedBooking()">保存</button></div>
@@ -1561,9 +1561,9 @@ function renderStats(){
     }else{
       container.innerHTML+=sorted.map(s=>{
         let details=''
-        if(s.leave)details+='请假 '+s.leave+' 次（'+s.leaveHours.toFixed(1)+'小时）'
-        if(s.late)details+=(details?' · ':'')+'迟到 '+s.late+' 次（'+s.lateMinutes+'分钟）'
-        if(s.early)details+=(details?' · ':'')+'早退 '+s.early+' 次（'+s.earlyMinutes+'分钟）'
+        if(s.leave)details+='请假 '+s.leave+' 次（'+(s.leaveHours||0).toFixed(1)+'小时）'
+        if(s.late)details+=(details?' · ':'')+'迟到 '+s.late+' 次（'+(s.lateMinutes||0)+'分钟）'
+        if(s.early)details+=(details?' · ':'')+'早退 '+s.early+' 次（'+(s.earlyMinutes||0)+'分钟）'
         const total=s.leave+s.late+s.early
         return '<div class="srow"><div class="sleft"><div class="sn">'+s.name+'</div><div class="sd">'+details+'</div></div><div class="scount">'+total+' 次</div></div>'
       }).join('')
