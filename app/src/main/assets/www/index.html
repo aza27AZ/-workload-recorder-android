@@ -932,11 +932,11 @@ function showDutyModalAfterCalendar(){
   showModal('新增值班记录',`
     <div class="mg"><label>值班人员</label><div class="staff-tags" id="dutyStaff">${staffChips}</div></div>
     <div class="mg"><label>班次</label><div class="chips" id="dutyShift">
-      <span class="chip ${defShift==='MORNING'?'sel':''}" onclick="selChip(this,'dutyShift','MORNING')">早班 <small>08:00-16:00</small></span>
-      <span class="chip ${defShift==='EVENING'?'sel':''}" onclick="selChip(this,'dutyShift','EVENING')">晚班 <small>14:00-22:00</small></span>
-      <span class="chip ${defShift==='ALL_DAY'?'sel':''}" onclick="selChip(this,'dutyShift','ALL_DAY')">通班 <small>08:00-22:00</small></span>
+      <span class="chip ${defShift==='MORNING'?'sel':''}" onclick="selChip(this,'dutyShift','MORNING')">早班 <small>09:00-17:00</small></span>
+      <span class="chip ${defShift==='EVENING'?'sel':''}" onclick="selChip(this,'dutyShift','EVENING')">晚班 <small>14:00-21:00</small></span>
+      <span class="chip ${defShift==='ALL_DAY'?'sel':''}" onclick="selChip(this,'dutyShift','ALL_DAY')">通班 <small>09:00-21:00</small></span>
     </div></div>
-    <div class="mg"><label>时间</label><div style="display:flex;gap:8px"><input type="time" id="dutyStart" value="${defShift==='MORNING'?'08:00':defShift==='EVENING'?'14:00':'08:00'}"><input type="time" id="dutyEnd" value="${defShift==='MORNING'?'16:00':defShift==='EVENING'?'22:00':'22:00'}"></div></div>
+    <div class="mg"><label>时间</label><div style="display:flex;gap:8px"><input type="time" id="dutyStart" value="${defShift==='MORNING'?'09:00':defShift==='EVENING'?'14:00':'09:00'}"><input type="time" id="dutyEnd" value="${defShift==='MORNING'?'17:00':defShift==='EVENING'?'21:00':'21:00'}"></div></div>
     <div class="mg"><label>日期</label>
       <div id="dutyDatePicker" style="padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center" onclick="openDutyCalendar()">
         <span id="dutyDateDisplay">${formatDateDisplay(dutySelectedDate)}</span>
@@ -962,11 +962,11 @@ function showDutyModal(){
   showModal('新增值班记录',`
     <div class="mg"><label>值班人员</label><div class="staff-tags" id="dutyStaff">${staffChips}</div></div>
     <div class="mg"><label>班次</label><div class="chips" id="dutyShift">
-      <span class="chip ${defShift==='MORNING'?'sel':''}" onclick="selChip(this,'dutyShift','MORNING')">早班 <small>08:00-16:00</small></span>
-      <span class="chip ${defShift==='EVENING'?'sel':''}" onclick="selChip(this,'dutyShift','EVENING')">晚班 <small>14:00-22:00</small></span>
-      <span class="chip ${defShift==='ALL_DAY'?'sel':''}" onclick="selChip(this,'dutyShift','ALL_DAY')">通班 <small>08:00-22:00</small></span>
+      <span class="chip ${defShift==='MORNING'?'sel':''}" onclick="selChip(this,'dutyShift','MORNING')">早班 <small>09:00-17:00</small></span>
+      <span class="chip ${defShift==='EVENING'?'sel':''}" onclick="selChip(this,'dutyShift','EVENING')">晚班 <small>14:00-21:00</small></span>
+      <span class="chip ${defShift==='ALL_DAY'?'sel':''}" onclick="selChip(this,'dutyShift','ALL_DAY')">通班 <small>09:00-21:00</small></span>
     </div></div>
-    <div class="mg"><label>时间</label><div style="display:flex;gap:8px"><input type="time" id="dutyStart" value="${defShift==='MORNING'?'08:00':defShift==='EVENING'?'14:00':'08:00'}"><input type="time" id="dutyEnd" value="${defShift==='MORNING'?'16:00':defShift==='EVENING'?'22:00':'22:00'}"></div></div>
+    <div class="mg"><label>时间</label><div style="display:flex;gap:8px"><input type="time" id="dutyStart" value="${defShift==='MORNING'?'09:00':defShift==='EVENING'?'14:00':'09:00'}"><input type="time" id="dutyEnd" value="${defShift==='MORNING'?'17:00':defShift==='EVENING'?'21:00':'21:00'}"></div></div>
     <div class="mg"><label>日期</label>
       <div id="dutyDatePicker" style="padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center" onclick="openDutyCalendar()">
         <span id="dutyDateDisplay">${formatDateDisplay(dutySelectedDate)}</span>
@@ -999,9 +999,9 @@ function selChip(el,group,val){
   if(group==='dutyShift'){
     const v=val
     const start=document.getElementById('dutyStart'),end=document.getElementById('dutyEnd')
-    if(v==='MORNING'){start.value='08:00';end.value='16:00'}
-    else if(v==='EVENING'){start.value='14:00';end.value='22:00'}
-    else{start.value='08:00';end.value='22:00'}
+    if(v==='MORNING'){start.value='09:00';end.value='17:00'}
+    else if(v==='EVENING'){start.value='14:00';end.value='21:00'}
+    else{start.value='09:00';end.value='21:00'}
   }
   if(group==='bookSlot'){
     const v=val
