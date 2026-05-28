@@ -1363,14 +1363,7 @@ function renderStats(){
 
     container.innerHTML='<div class="hero"><div class="hl">'+label+'</div><div class="hr"><div class="hi"><div class="num">'+opsTotal+'</div><div class="lb">入馆人数</div></div><div class="hi"><div class="num">'+periodBookingsCount+'</div><div class="lb">预约场次</div></div><div class="hi"><div class="num">'+periodBookingsParticipants+'</div><div class="lb">预约人次</div></div></div></div>'
     
-    if(periodBookingsCount>0 || opsFiltered.length>0){
-      let summary='<div class="stats-summary"><div class="summary-title">运营概况</div>'
-      if(opsTotal>0)summary+='<div class="summary-item"><span class="summary-label">入馆人数统计</span><span class="summary-value">'+opsTotal+' 人</span></div>'
-      if(periodBookingsCount>0)summary+='<div class="summary-item"><span class="summary-label">预约场次统计</span><span class="summary-value">'+periodBookingsCount+' 场</span></div>'
-      if(allBookingsCount>0)summary+='<div class="summary-item"><span class="summary-label">历史预约总数</span><span class="summary-value">'+allBookingsCount+' 场</span></div>'
-      summary+='</div>'
-      container.innerHTML+=summary
-    }
+
 
     const combined=[]
     opsFiltered.forEach(o=>combined.push({...o,type:'operation',label:new Date(o.date).getFullYear()+'年'+(new Date(o.date).getMonth()+1)+'月'}))
@@ -1969,20 +1962,38 @@ function importDataClick(){
       const reader=new FileReader()
       reader.onload=function(ev){
         try{
-          const data=JSON.parse(ev.target.result)
-          if(!data.version){toast('文件格式错误：缺少版本号');document.body.removeChild(input);return}
-          if(data.staff){STORE.staff.set(data.staff)}
-          if(data.duties){STORE.duties.set(data.duties)}
-          if(data.teachings){STORE.teachings.set(data.teachings)}
-          if(data.bookings){STORE.bookings.set(data.bookings)}
-          if(data.operations){STORE.operations.set(data.operations)}
-          if(data.zones){STORE.zones.set(data.zones)}
-          if(data.courseTypes){STORE.courseTypes.set(data.courseTypes)}
+          const raw=JSON.parse(ev.target.result)
+          let data=raw
+          if(raw.data&&raw.data.employees){
+            data=raw.data
+            if(data.employees){
+              data.staff=data.employees.map(function(emp){
+                var remark='值班人员'
+                if(emp.position==='值班顶班'){
+                  remark='顶班人员'
+                }
+                return {id:emp.id||uuid(),name:emp.name,remark:remark,createdAt:emp.createdAt||Date.now()}
+              })
+              delete data.employees
+            }
+          }else if(data.version===undefined){
+            toast('文件格式错误：未找到版本号，无法识别为有效备份文件');document.body.removeChild(input);return
+          }
+          if(data.staff!==undefined){STORE.staff.set(data.staff)}
+          if(data.duties!==undefined){STORE.duties.set(data.duties)}
+          if(data.teachings!==undefined){STORE.teachings.set(data.teachings)}
+          if(data.bookings!==undefined){STORE.bookings.set(data.bookings)}
+          if(data.operations!==undefined){STORE.operations.set(data.operations)}
+          if(data.zones!==undefined){STORE.zones.set(data.zones)}
+          if(data.courseTypes!==undefined){STORE.courseTypes.set(data.courseTypes)}
+          if(data.absences!==undefined){STORE.absences.set(data.absences)}
           toast('数据导入成功')
           renderWork()
           renderCalendar()
           renderStats()
-        }catch{toast('文件格式错误：无法解析JSON')}
+        }catch(e){
+          toast('文件格式错误：'+e.message)
+        }
         document.body.removeChild(input)
       };reader.readAsText(file)
     };input.click()
