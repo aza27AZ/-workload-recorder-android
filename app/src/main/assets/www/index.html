@@ -1546,24 +1546,15 @@ function renderStats(){
     const sorted=Object.values(staffMap).sort((a,b)=>(b.leave+b.late+b.early)-(a.leave+a.late+a.early))
 
     container.innerHTML='<div class="hero"><div class="hl">'+label+'</div><div class="hr"><div class="hi"><div class="num">'+leaveCount+'</div><div class="lb">请假人次</div></div><div class="hi"><div class="num">'+lateCount+'</div><div class="lb">迟到人次</div></div><div class="hi"><div class="num">'+earlyCount+'</div><div class="lb">早退人次</div></div></div></div>'
-    
-    if(leaveCount>0 || lateCount>0 || earlyCount>0){
-      let summary='<div class="stats-summary"><div class="summary-title">考勤概况</div>'
-      if(leaveCount>0)summary+='<div class="summary-item"><span class="summary-label">请假总时长</span><span class="summary-value" style="color:#5856d6">'+totalAbsenceHours.toFixed(1)+' 小时</span></div>'
-      if(lateCount>0)summary+='<div class="summary-item"><span class="summary-label">迟到总时长</span><span class="summary-value" style="color:#ff3b30">'+totalLateMinutes+' 分钟</span></div>'
-      if(earlyCount>0)summary+='<div class="summary-item"><span class="summary-label">早退总时长</span><span class="summary-value" style="color:#ff9500">'+totalEarlyMinutes+' 分钟</span></div>'
-      summary+='</div>'
-      container.innerHTML+=summary
-    }
 
     if(!sorted.length){
         container.innerHTML+='<div class="empty"><div class="icon">📊</div>暂无考勤异常记录</div>'
     }else{
       container.innerHTML+=sorted.map(s=>{
         let details=''
-        if(s.leave)details+='请假 '+s.leave+' 次（'+(s.leaveHours||0).toFixed(1)+'小时）'
-        if(s.late)details+=(details?' · ':'')+'迟到 '+s.late+' 次（'+(s.lateMinutes||0)+'分钟）'
-        if(s.early)details+=(details?' · ':'')+'早退 '+s.early+' 次（'+(s.earlyMinutes||0)+'分钟）'
+        if(s.leave)details+='请假 '+s.leave+' 次'
+        if(s.late)details+=(details?' · ':'')+'迟到 '+s.late+' 次'
+        if(s.early)details+=(details?' · ':'')+'早退 '+s.early+' 次'
         const total=s.leave+s.late+s.early
         return '<div class="srow"><div class="sleft"><div class="sn">'+s.name+'</div><div class="sd">'+details+'</div></div><div class="scount">'+total+' 次</div></div>'
       }).join('')
