@@ -1264,8 +1264,87 @@ function renderCalEvents(ms){
   bookings.forEach(b=>{
     const colorMap={MORNING:['var(--accent)','上午'],AFTERNOON:['#ff9500','下午'],FULL_DAY:['#34c759','全天']}
     const [clr,txt]=colorMap[b.timeSlot]||[colorMap.MORNING[0],b.timeSlot]
-    container.innerHTML+='<div class="ev" style="border-left-color:'+clr+'" onclick="deleteBooking(\''+b.id+'\')"><div class="et2" style="color:'+clr+'">'+txt+'</div><div class="ei2"><div class="m">'+b.bookingSubject+' · '+b.zoneNames+'</div><div class="s">对接 '+b.contactPerson+' · '+b.participantCount+' 人</div></div></div>'
+    container.innerHTML+='<div class="ev" style="border-left-color:'+clr+'" onclick="showBookingActions(\''+b.id+'\')"><div class="et2" style="color:'+clr+'">'+txt+'</div><div class="ei2"><div class="m">'+b.bookingSubject+' · '+b.zoneNames+'</div><div class="s">对接 '+b.contactPerson+' · '+b.participantCount+' 人</div></div></div>'
   })
+}
+
+// ===== BOOKING RECORD ACTIONS =====
+function showBookingActions(id){
+  showModal('操作',`
+    <div style="padding: 10px 0;">
+      <button class="btn-add" onclick="hideModal();editBooking('${id}')" style="background: var(--accent);">
+        <svg class="icon" viewBox="0 0 24 24" style="width: 18px; height: 18px; margin-right: 8px; stroke: currentColor; fill: none;"><path d="M12 20 L12 10 M18 14 L8 14"/></svg>
+        修改预约
+      </button>
+      <button class="btn-secondary" onclick="hideModal();deleteBooking('${id}')" style="color: #ff3b30; border-color: rgba(255,59,48,0.3);">
+        <svg class="icon" viewBox="0 0 24 24" style="width: 18px; height: 18px; margin-right: 8px; stroke: currentColor; fill: none;"><path d="M6 18 L18 18 M19 6 L15 6 L15 4 L9 4 L9 6 L5 6" stroke-linecap="round"/></svg>
+        删除预约
+      </button>
+    </div>
+    <div class="btns">
+      <button class="btn-cancel" onclick="hideModal()">取消</button>
+    </div>
+  `)
+}
+
+function editBooking(id){
+  const booking=STORE.bookings.get().find(b=>b.id===id)
+  if(!booking){toast('预约不存在');return}
+  const zones=STORE.zones.get()
+  const zoneChips=zones.map((z,i)=>{
+    const isSelected=booking.zoneNames && booking.zoneNames.includes(z)
+    return '<span class="chip'+(isSelected?' sel':'')+'" onclick="toggleBookZone(this,\''+z+'\')">'+z+'</span>'
+  }).join('')
+  const staff=STORE.staff.get()
+  const staffChips=staff.map((s,i)=>{
+    const isSelected=s.name===booking.contactPerson
+    return '<span class="stf'+(isSelected?' sel':'')+'" data-id="'+s.id+'" onclick="selBookStaff(this)">'+s.name+'</span>'
+  }).join('')
+  showModal('修改预约',`
+    <input type="hidden" id="editBookingId" value="${booking.id}">
+    <div class="mg"><label>预约主体</label><input type="text" id="editBookSubject" placeholder="如：某分会" value="${escapeHtml(booking.bookingSubject)}"></div>
+    <div class="mg"><label>活动方案</label><input type="text" id="editBookPlan" placeholder="如：团建活动" value="${escapeHtml(booking.activityPlan||'')}"></div>
+    <div class="mg"><label>功能区 <small style="color:var(--text3)">可多选</small></label><div class="chips" id="bookZone">${zoneChips}</div></div>
+    <div class="mg"><label>时段</label><div class="chips" id="bookSlot">
+      <span class="chip${booking.timeSlot==='MORNING'?' sel':''}" onclick="selChip(this,'bookSlot','MORNING')">上午</span>
+      <span class="chip${booking.timeSlot==='AFTERNOON'?' sel':''}" onclick="selChip(this,'bookSlot','AFTERNOON')">下午</span>
+      <span class="chip${booking.timeSlot==='FULL_DAY'?' sel':''}" onclick="selChip(this,'bookSlot','FULL_DAY')">全天</span>
+    </div></div>
+    <div class="mg"><label>时间</label><div style="display:flex;gap:8px"><input type="time" id="editBookStart" value="${booking.startTime}"><input type="time" id="editBookEnd" value="${booking.endTime}"></div></div>
+    <div class="mg"><label>日期</label><input type="date" id="editBookDate" value="${new Date(booking.date).toISOString().slice(0,10)}"></div>
+    <div class="mg"><label>人数</label><input type="number" id="editBookCount" value="${booking.participantCount}" min="1"></div>
+    <div class="mg"><label>对接人</label><div class="staff-tags" id="bookStaff">${staffChips||'<span style="color:var(--text3)">请先添加工作人员</span>'}</div></div>
+    <div class="mg"><label>备注</label><input type="text" id="editBookRemark" placeholder="可选" value="${escapeHtml(booking.remark||'')}"></div>
+    <div class="btns"><button class="btn-cancel" onclick="hideModal()">取消</button><button class="btn-confirm" onclick="saveEditedBooking()">保存</button></div>
+  `)
+  window._bookStaffId=staff.find(s=>s.name===booking.contactPerson)?.id || null
+}
+
+function saveEditedBooking(){
+  const id=document.getElementById('editBookingId').value
+  const subject=document.getElementById('editBookSubject').value.trim()
+  if(!subject){toast('请输入预约主体');return}
+  const plan=document.getElementById('editBookPlan').value.trim()
+  const zoneEls=document.querySelectorAll('#bookZone .chip.sel')
+  const zoneNames=Array.from(zoneEls).map(el=>el.textContent).join('、')
+  if(!zoneNames){toast('请至少选择一个功能区');return}
+  const slotEl=document.querySelector('#bookSlot .chip.sel')
+  const slot=slotEl?slotEl.getAttribute('onclick').match(/'([^']+)'\)$/)[1]:'MORNING'
+  const start=document.getElementById('editBookStart').value
+  const end=document.getElementById('editBookEnd').value
+  const date=new Date(document.getElementById('editBookDate').value).getTime()
+  const count=parseInt(document.getElementById('editBookCount').value)
+  const selStaff=document.querySelector('#bookStaff .stf.sel')
+  if(!selStaff){toast('请选择对接人');return}
+  const contactPerson=selStaff.textContent
+  let bookings=STORE.bookings.get()
+  const idx=bookings.findIndex(b=>b.id===id)
+  if(idx<0){toast('预约不存在');return}
+  bookings[idx]={...bookings[idx],bookingSubject:subject,activityPlan:plan,date,timeSlot:slot,startTime:start,endTime:end,zoneNames,participantCount:count,contactPerson,remark:document.getElementById('editBookRemark').value}
+  STORE.bookings.set(bookings)
+  hideModal()
+  renderCalendar()
+  toast('预约已更新')
 }
 
 // ===== BOOKING CRUD =====
