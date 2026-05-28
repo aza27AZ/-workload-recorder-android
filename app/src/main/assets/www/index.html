@@ -728,7 +728,6 @@ function editRecord(id,type){
       <div class="mg"><label>日期</label><input type="date" id="teachDate" value="${new Date(teaching.date).toISOString().slice(0,10)}"></div>
       <div class="btns"><button class="btn-cancel" onclick="hideModal()">取消</button><button class="btn-confirm" onclick="saveEditedTeaching()">保存</button></div>
     `)
-    window._teachType=teaching.courseType
   }else{
     const absence=STORE.absences.get().find(a=>a.id===id)
     if(!absence){toast('记录不存在');return}
@@ -808,8 +807,9 @@ function saveEditedTeaching(){
   const selStaff=document.querySelector('#dutyStaff .stf.sel')
   if(!selStaff){toast('请选择教练');return}
   const staffId=selStaff.dataset.id,staffName=selStaff.textContent
-  let courseType=window._teachType
-  if(courseType==='other'){
+  const selType2=document.querySelector('#teachType .chip.sel')
+  let courseType=selType2?selType2.textContent:''
+  if(courseType==='自定义+'){
     courseType=document.getElementById('customType').value.trim()
     if(!courseType){toast('请输入课程类型');return}
   }
@@ -1169,19 +1169,16 @@ function showTeachingModal(){
   setTimeout(()=>{
     const sel=document.querySelectorAll('#dutyStaff .stf')
     if(sel.length)sel[0].classList.add('sel')
-    _teachType=STORE.courseTypes.get()[0]||''
   },50)
 }
-
-let _teachType=''
 
 function saveTeaching(){
   const selStaff=document.querySelector('#dutyStaff .stf.sel')
   if(!selStaff){toast('请选择教练');return}
   const staffId=selStaff.dataset.id,staffName=selStaff.textContent
   const selType=document.querySelector('#teachType .chip.sel')
-  let courseType=_teachType
-  if(courseType==='other'){
+  let courseType=selType?selType.textContent:''
+  if(courseType==='自定义+'){
     courseType=document.getElementById('customType').value.trim()
     if(!courseType){toast('请输入课程类型');return}
   }
