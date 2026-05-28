@@ -3,11 +3,6 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
-val keystoreFile: String? by project
-val keystorePassword: String? by project
-val keyAlias: String? by project
-val keyPassword: String? by project
-
 android {
     namespace = "com.workload.recorder"
     compileSdk = 34
@@ -25,17 +20,6 @@ android {
         }
     }
 
-    signingConfigs {
-        create("release") {
-            if (keystoreFile != null && keystorePassword != null && keyAlias != null && keyPassword != null) {
-                storeFile = file(keystoreFile!!)
-                storePassword = keystorePassword!!
-                keyAlias = keyAlias!!
-                keyPassword = keyPassword!!
-            }
-        }
-    }
-
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -44,9 +28,6 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            if (signingConfigs.findByName("release") != null) {
-                signingConfig = signingConfigs.getByName("release")
-            }
         }
         debug {
             isDebuggable = true
