@@ -271,15 +271,23 @@ body{display:flex;flex-direction:column}
 .calendar-date{font-size:14px;font-weight:500;color:var(--text);line-height:1;z-index:1}
 .calendar-markers{display:flex;gap:3px;margin-top:4px;z-index:1}
 .calendar-marker{width:6px;height:6px;border-radius:50%}
-.calendar-marker.morning{background:#ff9500}
+.calendar-marker.morning{background:var(--accent)}
 .calendar-marker.evening{background:#34c759}
 .calendar-marker.holiday{background:#5856d6}
 .calendar-legend{display:flex;gap:16px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);flex-wrap:wrap;justify-content:center}
 .calendar-legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2)}
 .calendar-legend-item .dot{width:10px;height:10px;border-radius:50%}
-.calendar-legend-item .dot.morning{background:#ff9500}
+.calendar-legend-item .dot.morning{background:var(--accent)}
 .calendar-legend-item .dot.evening{background:#34c759}
 .calendar-legend-item .dot.holiday{background:#5856d6}
+
+/* Period Navigation */
+.period-nav{display:flex;align-items:center;gap:12px;margin-bottom:14px;background:var(--surface);border-radius:var(--radius);padding:12px;border:1px solid var(--border)}
+.period-btn{width:36px;height:36px;border:none;background:var(--bg);border-radius:10px;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.period-btn:active{transform:scale(0.95);background:var(--accent-bg);color:var(--accent)}
+.period-display{flex:1;text-align:center}
+.period-label{font-size:14px;font-weight:600;color:var(--text)}
+.period-range{font-size:11px;color:var(--text3);margin-top:2px}
 
 /* Calendar Modal */
 .calendar-modal{max-width:90vw;width:360px}
@@ -371,10 +379,18 @@ body{display:flex;flex-direction:column}
       <span class="st" onclick="switchStatsTab(2)">考勤</span>
       <span class="st" onclick="switchStatsTab(3)">运营</span>
     </div>
+    <div class="period-nav">
+      <button class="period-btn" onclick="navigatePeriod(-1)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18 L9 12 L15 6"/></svg></button>
+      <div class="period-display">
+        <div class="period-label" id="periodLabel">本季度</div>
+        <div class="period-range" id="periodRange"></div>
+      </div>
+      <button class="period-btn" onclick="navigatePeriod(1)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18 L15 12 L9 6"/></svg></button>
+    </div>
     <div class="prd">
-      <span class="act" onclick="switchStatsPeriod(0)">本季度</span>
-      <span onclick="switchStatsPeriod(1)">上季度</span>
-      <span onclick="switchStatsPeriod(2)">年度</span>
+      <span class="act" id="periodType0" onclick="switchPeriodType(0)">季度</span>
+      <span id="periodType1" onclick="switchPeriodType(1)">年度</span>
+      <span id="periodType2" onclick="switchPeriodType(2)">月度</span>
     </div>
     <div id="statsContent"></div>
   </div>
@@ -1323,28 +1339,70 @@ function deleteBooking(id){
 }
 
 // ===== STATISTICS =====
-let statsTab=0,statsPeriod=0
+let statsTab=0,periodType=0,periodOffset=0
 function switchStatsTab(i){
   document.querySelectorAll('.subt .st').forEach((t,idx)=>t.classList.toggle('act',idx===i))
   statsTab=i;renderStats()
 }
-function switchStatsPeriod(i){
+function switchPeriodType(i){
+  periodType=i;periodOffset=0;
   document.querySelectorAll('.prd span').forEach((p,idx)=>p.classList.toggle('act',idx===i))
-  statsPeriod=i;renderStats()
+  renderStats()
+}
+function navigatePeriod(dir){
+  periodOffset+=dir;renderStats()
 }
 
 function getDateRange(){
   const now=new Date()
-  const y=now.getFullYear()
-  if(statsPeriod===2)return {start:new Date(y,0,1).getTime(),end:new Date(y+1,0,1).getTime(),label:y+' 年'}
-  const q=Math.floor(now.getMonth()/3)
-  const sq=statsPeriod===0?q:q-1
-  const sy=y,sm=sq*3
-  return {start:new Date(sy,sm,1).getTime(),end:new Date(sy,sm+3,1).getTime(),label:sy+' 年第 '+(sq+1)+' 季度'}
+  let y=now.getFullYear()
+  let m=now.getMonth()
+  
+  // Calculate base date from offset
+  const baseDate=new Date(y,m,1)
+  if(periodType===0){ // 季度
+    const q=Math.floor((m + periodOffset*3)/3)
+    const yearAdjust=Math.floor((m + periodOffset*3)/12)
+    const finalYear=y+yearAdjust
+    const finalQ=((q%4)+4)%4
+    const label=finalYear+' 年第 '+(finalQ+1)+' 季度'
+    const start=new Date(finalYear,finalQ*3,1).getTime()
+    const end=new Date(finalYear,finalQ*3+3,1).getTime()
+    return {start,end,label,displayStart:finalYear+'年'+(finalQ*3+1)+'月',displayEnd:finalYear+'年'+(finalQ*3+3)+'月'}
+  }else if(periodType===1){ // 年度
+    const finalYear=y+periodOffset
+    const label=finalYear+' 年'
+    const start=new Date(finalYear,0,1).getTime()
+    const end=new Date(finalYear+1,0,1).getTime()
+    return {start,end,label,displayStart:finalYear+'年1月',displayEnd:finalYear+'年12月'}
+  }else{ // 月度
+    const finalDate=new Date(y,m+periodOffset,1)
+    const finalYear=finalDate.getFullYear()
+    const finalM=finalDate.getMonth()
+    const label=finalYear+' 年 '+ (finalM+1)+' 月'
+    const start=new Date(finalYear,finalM,1).getTime()
+    const end=new Date(finalYear,finalM+1,1).getTime()
+    return {start,end,label,displayStart:finalYear+'年'+(finalM+1)+'月1日',displayEnd:finalYear+'年'+(finalM+1)+'月'}
+  }
+}
+
+function updatePeriodDisplay(range){
+  const labelEl=document.getElementById('periodLabel')
+  const rangeEl=document.getElementById('periodRange')
+  labelEl.textContent=range.label
+  rangeEl.textContent=range.displayStart + ' - ' + range.displayEnd
+  
+  // Update period type labels
+  const typeLabels=['季度','年度','月度']
+  document.querySelectorAll('.prd span').forEach((p,idx)=>{
+    p.textContent=typeLabels[idx]
+  })
 }
 
 function renderStats(){
-  const {start,end,label}=getDateRange()
+  const range=getDateRange()
+  updatePeriodDisplay(range)
+  const {start,end,label}=range
   const container=document.getElementById('statsContent')
   if(statsTab===0){
     const duties=STORE.duties.get().filter(d=>d.date>=start&&d.date<end)
