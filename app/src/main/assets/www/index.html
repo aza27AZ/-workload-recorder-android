@@ -2269,16 +2269,19 @@ function calendarSelectDate(containerId, year, month, day, showLegend){
   calendarSelectedDate = new Date(year, month, day)
   renderCalendarComponent(containerId, {showLegend})
   
-  if(calendarOnSelectCallback){
-    calendarOnSelectCallback(calendarSelectedDate)
+  // 更新确认按钮的显示状态
+  const modalBody = document.getElementById('modalBody')
+  if(modalBody){
+    const confirmBtn = modalBody.querySelector('.btn-confirm')
+    if(confirmBtn){
+      confirmBtn.style.display = 'block'
+    }
   }
 }
 
 function showCalendarModal(onSelect, initialDate = null){
-  calendarOnSelectCallback = (date) => {
-    onSelect(date)
-    hideModal()
-  }
+  // 保存回调函数但不立即关闭
+  calendarOnSelectCallback = onSelect
   
   if(initialDate){
     calendarSelectedDate = new Date(initialDate)
@@ -2294,7 +2297,7 @@ function showCalendarModal(onSelect, initialDate = null){
     </div>
     <div class="btns">
       <button class="btn-cancel" onclick="hideModal()">取消</button>
-      ${calendarSelectedDate ? `<button class="btn-confirm" onclick="confirmCalendarSelection()">确认选择</button>` : ''}
+      <button class="btn-confirm" onclick="confirmCalendarSelection()" style="${calendarSelectedDate ? '' : 'display:none'}">确认选择</button>
     </div>
   `)
   
@@ -2303,8 +2306,11 @@ function showCalendarModal(onSelect, initialDate = null){
 
 function confirmCalendarSelection(){
   if(calendarSelectedDate && calendarOnSelectCallback){
-    calendarOnSelectCallback(calendarSelectedDate)
     hideModal()
+    // 延迟执行回调，确保弹窗完全关闭后再打开新弹窗
+    setTimeout(() => {
+      calendarOnSelectCallback(calendarSelectedDate)
+    }, 100)
   }
 }
 
