@@ -1,0 +1,2162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#F5F5F7">
+<meta name="application-name" content="工作量记录">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="工作量记录">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="512x512" href="icon-512.png">
+<title>工作量记录</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+:root{
+  --bg:#f5f5f7;--surface:#fff;--border:#e5e5ea;
+  --text:#1d1d1f;--text2:#6e6e73;--text3:#aeaeb2;
+  --accent:#0071e3;--accent-bg:rgba(0,113,227,0.08);
+  --radius:14px;--shadow:0 2px 14px rgba(0,0,0,0.04);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+  --safe-top:env(safe-area-inset-top,0px)
+}
+html,body{width:100%;min-height:100vh;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Helvetica Neue',system-ui,sans-serif;color:var(--text);-webkit-font-smoothing:antialiased;overflow-x:hidden;touch-action:manipulation}
+body{display:flex;flex-direction:column}
+
+/* Tab Bar */
+.tabbar{position:fixed;bottom:0;left:0;right:0;z-index:100;display:flex;background:rgba(255,255,255,0.92);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border-top:1px solid var(--border);padding:6px 0 calc(12px + var(--safe-bottom))}
+.tabbar .tab{flex:1;text-align:center;font-size:10px;color:var(--text3);padding:2px 0;font-weight:500;cursor:pointer;-webkit-user-select:none;user-select:none;transition:color .15s}
+.tabbar .tab .icon{width:24px;height:24px;margin:0 auto 2px;color:inherit;display:block;stroke:currentColor;fill:none;stroke-width:1.5}
+.tabbar .tab.active{color:var(--accent)}
+.tabbar .tab .badge{position:relative;top:-6px;left:6px;background:#ff3b30;color:#fff;font-size:8px;padding:1px 4px;border-radius:6px;font-weight:700}
+
+/* Page Container */
+.page{display:none;flex:1;padding-bottom:80px;width:100%;max-width:480px;margin:0 auto}
+.page.active{display:flex;flex-direction:column}
+
+/* Header */
+.hdr{display:flex;justify-content:space-between;align-items:center;padding:16px 20px 8px;padding-top:calc(16px + var(--safe-top));position:sticky;top:0;z-index:10;background:var(--bg);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px)}
+.hdr h2{font-size:22px;font-weight:700;color:var(--text);letter-spacing:-0.5px}
+.hdr-icon{font-size:13px;color:var(--accent);font-weight:600;padding:6px 14px;border-radius:30px;background:var(--accent-bg);border:1px solid rgba(0,113,227,0.12);cursor:pointer;-webkit-user-select:none;user-select:none;transition:all .15s}
+.hdr-icon:active{transform:scale(0.96)}
+
+/* Content */
+.c{padding:6px 20px 20px}
+
+/* Pills */
+.pills{display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.pills::-webkit-scrollbar{display:none}
+.pill{padding:6px 16px;border-radius:30px;font-size:12px;font-weight:500;color:var(--text2);background:var(--surface);white-space:nowrap;flex-shrink:0;border:1px solid var(--border);cursor:pointer;transition:all .15s;-webkit-user-select:none}
+.pill.active{background:var(--text);color:#fff;border-color:var(--text)}
+
+/* Section Header */
+.sh{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.sh h3{font-size:16px;font-weight:700;color:var(--text)}
+.sh .action{font-size:13px;color:var(--accent);font-weight:600;cursor:pointer}
+
+/* Record Row */
+.row{display:flex;align-items:center;padding:14px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s}
+.row:active{background:var(--bg);margin:0 -20px;padding:14px 20px;border-radius:var(--radius)}
+.row:last-child{border-bottom:none}
+.rd{text-align:center;min-width:48px;margin-right:12px}
+.rd .d{font-size:20px;font-weight:700;color:var(--text);line-height:1.1}
+.rd .m{font-size:11px;color:var(--text3)}
+.ri{flex:1;min-width:0}
+.ri .n{font-size:15px;font-weight:600;color:var(--text)}
+.ri .meta{font-size:12px;color:var(--text2);margin-top:4px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.ri .meta .del{font-size:11px;color:#ff3b30;margin-left:auto;padding:4px 8px;border-radius:6px;background:rgba(255,59,48,0.06);cursor:pointer}
+.ri .meta .del:active{background:rgba(255,59,48,0.15)}
+
+/* Tags */
+.tag{padding:3px 10px;border-radius:8px;font-size:10px;font-weight:600}
+.tag-blue{background:var(--accent-bg);color:var(--accent)}
+.tag-red{background:rgba(255,59,48,0.06);color:#ff3b30}
+.tag-orange{background:rgba(255,149,0,0.08);color:#ff9500}
+.tag-green{background:rgba(52,199,89,0.08);color:#34c759}
+.tag-purple{background:rgba(88,86,214,0.08);color:#5856d6}
+
+/* Buttons */
+.btn-add{display:flex;align-items:center;justify-content:center;background:var(--text);color:#fff;border:none;border-radius:30px;padding:14px 20px;font-size:14px;font-weight:600;width:100%;margin:12px 0;cursor:pointer;transition:all .15s}
+.btn-add:active{transform:scale(0.98);opacity:0.9}
+.btn-secondary{display:flex;align-items:center;justify-content:center;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:30px;padding:14px 20px;font-size:14px;font-weight:600;width:100%;margin:6px 0;cursor:pointer;transition:all .15s}
+.btn-secondary:active{transform:scale(0.98)}
+
+/* Calendar */
+.calh{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.calh .my{font-size:18px;font-weight:700;color:var(--text)}
+.calh .cnav{display:flex;gap:8px}
+.calh .cnav span{font-size:20px;color:var(--text2);padding:4px;border-radius:8px;background:var(--surface);border:1px solid var(--border);width:34px;text-align:center;cursor:pointer;-webkit-user-select:none}
+.calh .cnav span:active{background:var(--bg)}
+.calg{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:14px}
+.calg .wd{text-align:center;font-size:11px;color:var(--text3);padding:8px 0;font-weight:600}
+.calg .cl{text-align:center;padding:6px 0;font-size:13px;color:var(--text2);width:36px;height:36px;margin:0 auto;display:flex;align-items:center;justify-content:center;border-radius:50%;position:relative;cursor:pointer;-webkit-user-select:none}
+.calg .cl:active{background:var(--bg)}
+.calg .cl.tdy{background:var(--accent);color:#fff;font-weight:700}
+.calg .cl.sel{background:rgba(0,113,227,0.15);color:var(--accent);font-weight:700}
+.calg .cl.ot{color:var(--text3);opacity:0.35}
+.calg .cl.nt::after{content:'';position:absolute;bottom:2px;width:4px;height:4px;border-radius:50%;background:var(--accent)}
+
+.etitle{font-size:13px;font-weight:600;color:var(--text2);margin:10px 0 8px;padding-top:12px;border-top:1px solid var(--border)}
+.ev{display:flex;align-items:center;padding:10px 14px;background:var(--surface);border-radius:var(--radius);margin-bottom:8px;border-left:3px solid var(--accent);cursor:pointer;transition:all .15s}
+.ev:active{transform:scale(0.98)}
+.ev .et2{font-size:11px;color:var(--accent);font-weight:600;min-width:40px}
+.ev .ei2{flex:1;margin-left:10px}
+.ev .ei2 .m{font-size:13px;font-weight:600;color:var(--text)}
+.ev .ei2 .s{font-size:11px;color:var(--text3)}
+
+/* Sub Tabs */
+.subt{display:flex;gap:0;margin-bottom:14px;background:var(--surface);border-radius:var(--radius);padding:3px}
+.subt .st{flex:1;text-align:center;padding:10px 0;font-size:12px;font-weight:500;color:var(--text3);border-radius:10px;cursor:pointer;transition:all .15s}
+.subt .st.act{background:var(--surface);color:var(--text);font-weight:600;box-shadow:var(--shadow)}
+
+/* Period Selector */
+.prd{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.prd span{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:500;background:var(--surface);border:1px solid var(--border);color:var(--text3);cursor:pointer;-webkit-user-select:none}
+.prd span:active{transform:scale(0.95)}
+.prd span.act{background:var(--text);border-color:var(--text);color:#fff}
+.stats-card{background:var(--surface);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow)}
+.stats-card-hdr{display:flex;justify-content:space-between;align-items:center;padding-bottom:6px;border-bottom:1px solid var(--border);font-size:14px;font-weight:600;color:var(--text)}
+
+/* Hero Card */
+.hero{background:linear-gradient(135deg,#0071e3,#5856d6);border-radius:var(--radius);padding:20px;margin-bottom:14px}
+.hero .hl{font-size:11px;opacity:0.8;font-weight:500;color:#fff}
+.hero .hr{display:flex;justify-content:space-around;margin-top:14px}
+.hero .hi{text-align:center;color:#fff}
+.hero .hi .num{font-size:28px;font-weight:800}
+.hero .hi .lb{font-size:10px;opacity:0.75}
+
+/* Stats Row */
+.srow{display:flex;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)}
+.srow:last-child{border-bottom:none}
+.srow .sleft{flex:1}
+.srow .sleft .sn{font-size:14px;font-weight:600;color:var(--text)}
+.srow .sleft .sd{font-size:11px;color:var(--text3)}
+.srow .scount{font-size:13px;font-weight:700;padding:4px 14px;border-radius:8px;background:var(--accent-bg);color:var(--accent)}
+
+/* Settings */
+.sg{margin-bottom:22px}
+.sg .sgt{font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px;letter-spacing:0.5px;text-transform:uppercase}
+.si{display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-bottom:1px solid var(--border);cursor:pointer}
+.si:last-child{border-bottom:none}
+.si:active{opacity:0.6}
+.si .sl{display:flex;align-items:center;gap:12px}
+.si .sl .sii{width:22px;height:22px;color:var(--text3);stroke:currentColor;fill:none;stroke-width:1.5}
+.si .sl .sit{font-size:15px;color:var(--text);font-weight:500}
+.si .sar{color:var(--text3);font-size:18px}
+
+/* Modal */
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:200;display:none;align-items:flex-end;justify-content:center;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.modal-overlay.show{display:flex}
+.modal-overlay.anim .modal-sheet{transform:translateY(0)}
+.modal-sheet{background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;padding:24px 20px calc(24px + var(--safe-bottom));transform:translateY(100%);transition:transform .35s cubic-bezier(.22,1,.36,1);-webkit-overflow-scrolling:touch}
+.modal-sheet .mt{font-size:18px;font-weight:700;color:var(--text);margin-bottom:20px}
+.modal-sheet .mg{margin-bottom:16px}
+.modal-sheet label{font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px}
+.modal-sheet input,.modal-sheet select,.modal-sheet textarea{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:12px;font-size:16px;color:var(--text);background:var(--bg);outline:none;font-family:inherit;touch-action:manipulation;direction:ltr;unicode-bidi:plaintext;-webkit-appearance:none;appearance:none}
+.modal-sheet input:focus,.modal-sheet select:focus,.modal-sheet textarea:focus{border-color:var(--accent)}
+.modal-sheet textarea{resize:vertical;min-height:60px}
+.modal-sheet input[type="date"],.modal-sheet input[type="time"],.modal-sheet input[type="datetime-local"]{padding:12px 14px;min-height:48px}
+.modal-sheet .btns{display:flex;gap:10px;margin-top:20px}
+.modal-sheet .btns button{flex:1;padding:14px;border-radius:30px;font-size:14px;font-weight:600;border:none;cursor:pointer;transition:all .15s}
+.modal-sheet .btns button:active{transform:scale(0.97)}
+.modal-sheet .btns .btn-cancel{background:var(--bg);color:var(--text2)}
+.modal-sheet .btns .btn-confirm{background:var(--text);color:#fff}
+.modal-sheet .btns .btn-danger{background:#ff3b30;color:#fff}
+
+/* Report preview */
+.rpt{background:var(--bg);border-radius:12px;padding:16px;margin-bottom:14px;font-size:13px;line-height:1.8;color:var(--text);max-height:400px;overflow-y:auto;white-space:pre-wrap;font-family:-apple-system,monospace}
+.rpt .rpt-h{font-size:15px;font-weight:700;text-align:center;color:var(--accent);margin-bottom:8px}
+.rpt .rpt-s{font-size:13px;font-weight:600;color:var(--text);margin-top:10px}
+.rpt .rpt-t{color:var(--text2);font-size:11px;text-align:center}
+
+/* Quick select chips */
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.chips .chip{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;background:var(--surface);border:1px solid var(--border);color:var(--text2);cursor:pointer;-webkit-user-select:none}
+.chips .chip:active{transform:scale(0.95)}
+.chips .chip.sel{background:var(--accent-bg);border-color:var(--accent);color:var(--accent)}
+
+/* Staff tags */
+.staff-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.staff-tags .stf{padding:6px 14px;border-radius:20px;font-size:13px;font-weight:500;background:var(--surface);border:1px solid var(--border);color:var(--text2);cursor:pointer;-webkit-user-select:none;transition:all .15s}
+.staff-tags .stf:active{transform:scale(0.95)}
+.staff-tags .stf.sel{background:var(--accent-bg);border-color:var(--accent);color:var(--accent);font-weight:600}
+
+/* Empty state */
+.empty{padding:40px 20px;text-align:center;color:var(--text3);font-size:14px;line-height:1.8}
+.empty .icon{font-size:40px;margin-bottom:12px;opacity:0.5}
+
+/* Toast */
+.toast{position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:300;background:rgba(29,29,31,0.92);color:#fff;padding:10px 20px;border-radius:14px;font-size:13px;font-weight:500;display:none;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);pointer-events:none;max-width:300px;text-align:center}
+.toast.show{display:block;animation:toastIn .3s ease-out}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(-10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+/* Confirm Dialog */
+.dialog-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:250;display:none;align-items:center;justify-content:center}
+.dialog-overlay.show{display:flex}
+.dialog-box{background:var(--surface);border-radius:20px;padding:24px;width:300px;text-align:center}
+.dialog-box .dt{font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px}
+.dialog-box .dd{font-size:13px;color:var(--text2);margin-bottom:20px}
+.dialog-box .dbtns{display:flex;gap:10px}
+.dialog-box .dbtns button{flex:1;padding:12px;border-radius:30px;font-size:13px;font-weight:600;border:none;cursor:pointer}
+.dialog-box .dbtns .d-cancel{background:var(--bg);color:var(--text2)}
+.dialog-box .dbtns .d-confirm{background:#ff3b30;color:#fff}
+
+/* Data section in modal */
+.data-list{margin-bottom:16px}
+.data-list .dl-item{display:flex;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
+.data-list .dl-item .dl-name{flex:1;font-size:14px;color:var(--text)}
+.data-list .dl-item .dl-del{color:#ff3b30;font-size:12px;padding:4px 10px;border-radius:6px;background:rgba(255,59,48,0.06);cursor:pointer}
+.data-list .dl-item .dl-del:active{background:rgba(255,59,48,0.15)}
+.data-list .dl-add{display:flex;gap:8px;margin-top:10px}
+.data-list .dl-add input{flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-size:13px;outline:none;background:var(--bg)}
+.data-list .dl-add input:focus{border-color:var(--accent)}
+.data-list .dl-add .dl-add-btn{padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;background:var(--accent);color:#fff;border:none;cursor:pointer}
+
+/* Template editor */
+.tpl-editor textarea{width:100%;min-height:320px;padding:14px;border:1px solid var(--border);border-radius:12px;font-size:13px;font-family:monospace;color:var(--text);background:var(--bg);outline:none;resize:vertical;line-height:1.7;tab-size:2}
+.tpl-editor textarea:focus{border-color:var(--accent)}
+.tpl-vars{display:flex;gap:4px;flex-wrap:wrap;padding:10px 0;border-top:1px solid var(--border);margin-top:10px}
+.tpl-vars .tpl-v{font-size:11px;padding:3px 8px;border-radius:6px;background:var(--accent-bg);color:var(--accent);cursor:pointer;white-space:nowrap}
+.tpl-vars .tpl-v:active{opacity:0.7}
+.tpl-info{font-size:11px;color:var(--text3);margin-bottom:10px;line-height:1.6}
+.tpl-actions{display:flex;gap:10px;margin-top:16px}
+.tpl-actions button{flex:1;padding:12px;border-radius:30px;font-size:13px;font-weight:600;border:none;cursor:pointer;transition:all .15s}
+.tpl-actions button:active{transform:scale(0.97)}
+.tpl-actions .tpl-save{background:var(--text);color:#fff}
+.tpl-actions .tpl-reset{background:rgba(255,59,48,0.06);color:#ff3b30;border:1px solid rgba(255,59,48,0.2)}
+.tpl-actions .tpl-cancel{background:var(--bg);color:var(--text2)}
+.tpl-tabs{display:flex;gap:8px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.tpl-tab{flex:1;padding:10px;border:none;border-radius:10px;font-size:13px;font-weight:500;color:var(--text2);background:var(--bg);cursor:pointer;transition:all .15s}
+.tpl-tab:hover{background:var(--accent-bg)}
+.tpl-tab-active{background:var(--text);color:#fff;font-weight:600}
+</style>
+</head>
+<body>
+
+<div id="toast" class="toast"></div>
+
+<div id="dialog" class="dialog-overlay">
+  <div class="dialog-box">
+    <div class="dt" id="dialogTitle">确认删除？</div>
+    <div class="dd" id="dialogDesc">此操作不可恢复</div>
+    <div class="dbtns">
+      <button class="d-cancel" onclick="hideDialog()">取消</button>
+      <button class="d-confirm" id="dialogConfirm" onclick="hideDialog()">删除</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal" class="modal-overlay" onclick="if(event.target===this)hideModal()">
+  <div class="modal-sheet" id="modalSheet">
+    <div class="mt" id="modalTitle">新增记录</div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<!-- ===== PAGE 1: 工作记录 ===== -->
+<div class="page active" id="page-work">
+  <div class="hdr">
+    <h2>工作记录</h2>
+    <span class="hdr-icon" onclick="showAddRecordModal()">+ 新增记录</span>
+  </div>
+  <div class="c">
+    <div class="pills" id="workPills">
+      <span class="pill active" onclick="switchWorkFilter(0)">全部</span>
+      <span class="pill" onclick="switchWorkFilter(1)">今日</span>
+      <span class="pill" onclick="switchWorkFilter(2)">本周</span>
+      <span class="pill" onclick="switchWorkFilter(3)">本月</span>
+    </div>
+    <div class="sh">
+      <h3 id="workSectionTitle">今日记录</h3>
+    </div>
+    <div id="workList"></div>
+  </div>
+</div>
+
+<!-- ===== PAGE 2: 预约日历 ===== -->
+<div class="page" id="page-booking">
+  <div class="hdr">
+    <h2>预约日历</h2>
+    <span class="hdr-icon" onclick="showBookingModal()">+ 新增</span>
+  </div>
+  <div class="c">
+    <div class="calh">
+      <span class="my" id="calMonth">2026 年 5 月</span>
+      <div class="cnav"><span onclick="prevMonth()">‹</span><span onclick="nextMonth()">›</span></div>
+    </div>
+    <div class="calg" id="calGrid"></div>
+    <div id="calEvents"></div>
+  </div>
+</div>
+
+<!-- ===== PAGE 3: 请假记录 ===== -->
+<div class="page" id="page-leave">
+  <div class="hdr">
+    <h2>请假记录</h2>
+    <span class="hdr-icon" onclick="showLeaveModal()">+ 新增</span>
+  </div>
+  <div class="c">
+    <div class="pills" id="leavePills">
+      <span class="pill active" onclick="switchLeaveFilter(0)">全部</span>
+      <span class="pill" onclick="switchLeaveFilter(1)">本月</span>
+      <span class="pill" onclick="switchLeaveFilter(2)">本年</span>
+    </div>
+    <div id="leaveList"></div>
+  </div>
+</div>
+
+<!-- ===== PAGE 4: 考勤记录 ===== -->
+<div class="page" id="page-attendance">
+  <div class="hdr">
+    <h2>考勤记录</h2>
+    <span class="hdr-icon" onclick="showAttendanceModal()">+ 新增</span>
+  </div>
+  <div class="c">
+    <div class="pills" id="attendancePills">
+      <span class="pill active" onclick="switchAttendanceFilter(0)">全部</span>
+      <span class="pill" onclick="switchAttendanceFilter(1)">本月</span>
+      <span class="pill" onclick="switchAttendanceFilter(2)">异常</span>
+    </div>
+    <div id="attendanceList"></div>
+  </div>
+</div>
+
+<!-- ===== PAGE 5: 统计报表 ===== -->
+<div class="page" id="page-stats">
+  <div class="hdr">
+    <h2>统计报表</h2>
+    <span class="hdr-icon" onclick="exportData()">导出</span>
+  </div>
+  <div class="c">
+    <div class="subt">
+      <span class="st act" onclick="switchStatsTab(0)">值班</span>
+      <span class="st" onclick="switchStatsTab(1)">授课</span>
+      <span class="st" onclick="switchStatsTab(2)">运营</span>
+    </div>
+    <div class="prd">
+      <span class="act" onclick="switchStatsPeriod(0)">本季度</span>
+      <span onclick="switchStatsPeriod(1)">上季度</span>
+      <span onclick="switchStatsPeriod(2)">年度</span>
+    </div>
+    <div id="statsContent"></div>
+  </div>
+</div>
+
+<!-- ===== PAGE 6: 管理设置 ===== -->
+<div class="page" id="page-settings">
+  <div class="hdr">
+    <h2>管理设置</h2>
+    <span class="hdr-icon" onclick="importDataClick()">导入</span>
+  </div>
+  <div class="c">
+    <div class="sg">
+      <div class="sgt">人员与配置</div>
+      <div class="si" onclick="showStaffModal()"><div class="sl"><svg class="sii" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M8 14 L8 20 M16 14 L16 20 M8 17 Q12 19 16 17" stroke-linecap="round"/></svg><span class="sit">工作人员管理</span></div><span class="sar">›</span></div>
+      <div class="si" onclick="showZonesModal()"><div class="sl"><svg class="sii" viewBox="0 0 24 24"><path d="M6 12 L12 4 L18 12" stroke-linecap="round"/><rect x="6" y="12" width="12" height="8"/></svg><span class="sit">功能区配置</span></div><span class="sar">›</span></div>
+      <div class="si" onclick="showCourseTypesModal()"><div class="sl"><svg class="sii" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="16" rx="1"/><line x1="12" y1="4" x2="12" y2="20"/></svg><span class="sit">上课类型配置</span></div><span class="sar">›</span></div>
+    </div>
+    <div class="sg">
+      <div class="sgt">数据管理</div>
+      <div class="si" onclick="showTextReportModal()"><div class="sl"><svg class="sii" viewBox="0 0 24 24"><path d="M6 4 L18 4 L18 20 L6 20 Z"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="14" x2="13" y2="14"/></svg><span class="sit">文字汇报导出</span></div><span class="sar">›</span></div>
+      <div class="si" onclick="showReportTemplateModal()"><div class="sl"><svg class="sii" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg><span class="sit">汇报模板编辑</span></div><span class="sar">›</span></div>
+      <div class="si" onclick="exportData()"><div class="sl"><svg class="sii" viewBox="0 0 24 24"><rect x="6" y="8" width="12" height="10"/><path d="M6 8 L12 2 L18 8" stroke-linecap="round"/></svg><span class="sit">导出数据（JSON）</span></div><span class="sar">›</span></div>
+      <div class="si" onclick="importDataClick()"><div class="sl"><svg class="sii" viewBox="0 0 24 24"><path d="M12 20 Q6 16 6 10 Q6 6 10 6 Q12 6 12 8 Q12 6 14 6 Q18 6 18 10 Q18 16 12 20"/><path d="M12 10 L12 14" stroke="white" stroke-width="2" stroke-linecap="round"/></svg><span class="sit">导入数据（JSON）</span></div><span class="sar">›</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- Tab Bar -->
+<div class="tabbar">
+  <div class="tab active" onclick="switchTab(0)">
+    <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="14" x2="15" y2="14"/><circle cx="19" cy="6" r="1.5" fill="currentColor"/></svg>
+    工作<span class="badge" id="workBadge" style="display:none">0</span>
+  </div>
+  <div class="tab" onclick="switchTab(1)">
+    <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><rect x="5" y="8" width="14" height="14" stroke-width="0.5"/><line x1="5" y1="11" x2="19" y2="11" stroke-width="0.5"/><line x1="5" y1="14" x2="19" y2="14" stroke-width="0.5"/><line x1="5" y1="17" x2="19" y2="17" stroke-width="0.5"/><line x1="8" y1="8" x2="8" y2="22" stroke-width="0.5"/><line x1="11" y1="8" x2="11" y2="22" stroke-width="0.5"/><line x1="14" y1="8" x2="14" y2="22" stroke-width="0.5"/><line x1="17" y1="8" x2="17" y2="22" stroke-width="0.5"/></svg>
+    预约
+  </div>
+  <div class="tab" onclick="switchTab(2)">
+    <svg class="icon" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="16" rx="2"/><path d="M8 10 L12 13 L16 10" stroke-linecap="round"/><line x1="8" y1="15" x2="16" y2="15" stroke-linecap="round"/><line x1="8" y1="18" x2="14" y2="18" stroke-linecap="round"/></svg>
+    请假<span class="badge" id="leaveBadge" style="display:none">0</span>
+  </div>
+  <div class="tab" onclick="switchTab(3)">
+    <svg class="icon" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9 L8 15" stroke-linecap="round"/><path d="M12 9 L12 12" stroke-linecap="round"/><path d="M16 9 L16 11" stroke-linecap="round"/><path d="M7 17 L17 17" stroke-linecap="round"/></svg>
+    考勤<span class="badge" id="attendanceBadge" style="display:none">0</span>
+  </div>
+  <div class="tab" onclick="switchTab(4)">
+    <svg class="icon" viewBox="0 0 24 24"><rect x="5" y="12" width="3" height="12" rx="1.5" fill="currentColor"/><rect x="10" y="8" width="3" height="16" rx="1.5" fill="currentColor"/><rect x="15" y="4" width="3" height="20" rx="1.5" fill="currentColor"/><rect x="20" y="10" width="3" height="14" rx="1.5" fill="currentColor"/></svg>
+    统计
+  </div>
+  <div class="tab" onclick="switchTab(5)">
+    <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4 L12 1 L14 3" stroke-linecap="round"/><path d="M20 12 L23 12 L21 14" stroke-linecap="round"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+    管理
+  </div>
+</div>
+
+<script>
+window.onerror=function(msg,url,line){var m='脚本错误: '+msg+' (行 '+line+')';if(window.AndroidBridge){try{AndroidBridge.showToast(m)}catch(e){}}toast(m)}
+// ===== DATA STORE =====
+const STORE={
+  get(key,def){
+    try{
+      const d=localStorage.getItem('wl_'+key)
+      return d?JSON.parse(d):def
+    }catch(e){
+      console.error('STORE.get error:',e)
+      return def
+    }
+  },
+  set(key,val){
+    try{
+      const dataStr=JSON.stringify(val)
+      if(dataStr.length>4*1024*1024){
+        toast('数据过大，请导出备份后清理旧数据')
+        return
+      }
+      localStorage.setItem('wl_'+key,dataStr)
+    }catch(e){
+      console.error('STORE.set error:',e)
+      if(e.name==='QuotaExceededError'||e.code===22){
+        toast('存储空间已满，请导出备份后清理旧数据')
+      }else{
+        toast('数据保存失败，请重试')
+      }
+    }
+  },
+  staff:{get(){return STORE.get('staff',[
+    {id:'1',name:'张三',remark:'值班人员',createdAt:Date.now()},
+    {id:'2',name:'李四',remark:'值班人员',createdAt:Date.now()},
+    {id:'3',name:'王教练',remark:'教练',createdAt:Date.now()},
+    {id:'4',name:'赵教练',remark:'教练',createdAt:Date.now()},
+    {id:'5',name:'陈教练',remark:'教练',createdAt:Date.now()}
+  ])},set(v){STORE.set('staff',v)}},
+  duties:{get(){return STORE.get('duties',[])},set(v){STORE.set('duties',v)}},
+  teachings:{get(){return STORE.get('teachings',[])},set(v){STORE.set('teachings',v)}},
+  bookings:{get(){return STORE.get('bookings',[])},set(v){STORE.set('bookings',v)}},
+  operations:{get(){return STORE.get('operations',[])},set(v){STORE.set('operations',v)}},
+  leaves:{get(){return STORE.get('leaves',[])},set(v){STORE.set('leaves',v)}},
+  leaveTypes:{get(){return STORE.get('leaveTypes',{
+    'annual':{name:'年假',icon:'🏖️',color:'#10b981'},
+    'sick':{name:'病假',icon:'🏥',color:'#f59e0b'},
+    'personal':{name:'事假',icon:'📝',color:'#6366f1'},
+    'marriage':{name:'婚假',icon:'💒',color:'#ec4899'},
+    'maternity':{name:'产假',icon:'👶',color:'#8b5cf6'},
+    'other':{name:'其他',icon:'📍',color:'#6b7280'}
+  })},set(v){STORE.set('leaveTypes',v)}},
+  attendance:{get(){return STORE.get('attendance',[])},set(v){STORE.set('attendance',v)}},
+  zones:{get(){return STORE.get('zones',['游泳区','篮球场','羽毛球场','乒乓球室','健身房','会议室'])},set(v){STORE.set('zones',v)}},
+  courseTypes:{get(){return STORE.get('courseTypes',['私教课','团课','体验课','公开课','私教小班课','体能训练'])},set(v){STORE.set('courseTypes',v)}},
+  reportTemplate:{get(){return STORE.get('reportTemplate','')},set(v){STORE.set('reportTemplate',v)}}
+};
+
+// ===== GLOBAL STATE =====
+const __g={dutyStaffId:null,teachType:'',bookStaffId:null,bookZone:'',rptPeriod:'quarter',workPage:0,workPageSize:50}
+window.__g=__g
+
+// Auto-render system
+__g._dirtyPages={}
+__g._renderPending=false
+function markDirty(page){
+  __g._dirtyPages[page]=true
+  if(!__g._renderPending){
+    __g._renderPending=true
+    requestAnimationFrame(function(){
+      __g._renderPending=false
+      if(__g._dirtyPages.work){renderWork()}
+      if(__g._dirtyPages.calendar){renderCalendar()}
+      if(__g._dirtyPages.stats){renderStats()}
+      if(__g._dirtyPages.leaves){renderLeaves()}
+      if(__g._dirtyPages.attendance){renderAttendance()}
+      __g._dirtyPages={}
+    })
+  }
+}
+
+// Auto-wrap store sets to trigger render
+;(function(){
+  var _ds=STORE.duties.set;STORE.duties.set=function(v){_ds(v);markDirty('work');markDirty('stats')}
+  var _ts=STORE.teachings.set;STORE.teachings.set=function(v){_ts(v);markDirty('work');markDirty('stats')}
+  var _bs=STORE.bookings.set;STORE.bookings.set=function(v){_bs(v);markDirty('calendar')}
+  var _os=STORE.operations.set;STORE.operations.set=function(v){_os(v);markDirty('stats')}
+  var _ss=STORE.staff.set;STORE.staff.set=function(v){_ss(v);markDirty('work');markDirty('stats')}
+  var _ls=STORE.leaves.set;STORE.leaves.set=function(v){_ls(v);markDirty('leaves');markDirty('stats')}
+  var _as=STORE.attendance.set;STORE.attendance.set=function(v){_as(v);markDirty('attendance');markDirty('stats')}
+})();
+
+// Undo snapshots
+__g._undo={}
+
+function showUndoToast(msg,key,restoreFn){
+  var t=document.getElementById('toast')
+  var container=t.parentNode
+  var undoEl=document.createElement('div')
+  undoEl.id='undoToast_'+key
+  undoEl.style.cssText='position:fixed;top:110px;left:50%;transform:translateX(-50%);z-index:300;background:rgba(29,29,31,0.92);color:#fff;padding:10px 20px;border-radius:14px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:10px;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);max-width:320px;text-align:center;animation:toastIn .3s ease-out'
+  var textSpan=document.createElement('span')
+  textSpan.style.flex='1'
+  textSpan.textContent=msg
+  var btn=document.createElement('button')
+  btn.textContent='撤销'
+  btn.style.cssText='padding:4px 12px;border-radius:20px;border:none;background:#0071e3;color:#fff;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0'
+  btn.onclick=function(){
+    restoreFn()
+    clearTimeout(undoEl._t)
+    if(undoEl.parentNode)undoEl.parentNode.removeChild(undoEl)
+  }
+  undoEl.appendChild(textSpan)
+  undoEl.appendChild(btn)
+  container.appendChild(undoEl)
+  var remaining=5
+  textSpan.textContent=msg+' ('+remaining+'s)'
+  undoEl._t=setInterval(function(){
+    remaining--
+    if(remaining<=0){
+      clearInterval(undoEl._t)
+      if(undoEl.parentNode)undoEl.parentNode.removeChild(undoEl)
+    }else{
+      textSpan.textContent=msg+' ('+remaining+'s)'
+    }
+  },1000)
+}
+
+// ===== HELPERS =====
+const now=new Date()
+function today(){const d=new Date();d.setHours(0,0,0,0);return d.getTime()}
+function dateKey(t){const d=new Date(t);return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()}
+function fmtDate(t){const d=new Date(t);return d.getMonth()+1+'月'+d.getDate()+'日'}
+function fmtDate2(t){const d=new Date(t);return d.getFullYear()+'年'+(d.getMonth()+1)+'月'}
+function dayOfWeek(t){const d=new Date(t);return d.getDay()||7}
+function weekStart(t){const d=new Date(t);const w=d.getDay()||7;d.setDate(d.getDate()-w+1);d.setHours(0,0,0,0);return d.getTime()}
+function monthStart(t){const d=new Date(t);d.setDate(1);d.setHours(0,0,0,0);return d.getTime()}
+function pad(n){return n<10?'0'+n:''+n}
+function uuid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+function getWeekNumber(d){const y=d.getFullYear();const first=new Date(y,0,1);const days=Math.floor((d-first)/86400000);return Math.ceil((days+first.getDay()+1)/7)}
+
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show';clearTimeout(t._t);t._t=setTimeout(()=>t.className='toast',2000)}
+function showDialog(title,desc,onConfirm){document.getElementById('dialogTitle').textContent=title;document.getElementById('dialogDesc').textContent=desc;const btn=document.getElementById('dialogConfirm');const cb=()=>{onConfirm();hideDialog()};btn.onclick=cb;document.getElementById('dialog').className='dialog-overlay show'}
+function hideDialog(){document.getElementById('dialog').className='dialog-overlay'}
+function showModal(title,bodyHtml){
+  document.getElementById('modalTitle').textContent=title
+  document.getElementById('modalBody').innerHTML=bodyHtml
+  const m=document.getElementById('modal')
+  m.className='modal-overlay show'
+  const sheet=m.querySelector('.modal-sheet')
+  sheet.style.transform='translateY(0)'
+  setTimeout(()=>{
+    const inputs=sheet.querySelectorAll('input,select,textarea')
+    inputs.forEach(inp=>{
+      inp.addEventListener('focus',function(){
+        setTimeout(()=>{this.scrollIntoView({behavior:'smooth',block:'center'})},300)
+      },{once:false})
+    })
+  },100)
+}
+function hideModal(){document.getElementById('modal').className='modal-overlay';document.getElementById('modalBody').innerHTML=''}
+
+// ===== TAB SWITCHING =====
+const pages=['page-work','page-booking','page-leave','page-attendance','page-stats','page-settings']
+function switchTab(i){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'))
+  document.getElementById(pages[i]).classList.add('active')
+  document.querySelectorAll('.tabbar .tab').forEach((t,idx)=>t.classList.toggle('active',idx===i))
+  if(i===1)renderCalendar()
+  if(i===2)renderLeaves()
+  if(i===3)renderAttendance()
+  if(i===4)renderStats()
+  if(i===0)renderWork()
+}
+
+// ===== WORK FILTER =====
+let workFilter=0
+function switchWorkFilter(i){
+  document.querySelectorAll('#workPills .pill').forEach((p,idx)=>p.classList.toggle('active',idx===i))
+  workFilter=i
+  __g.workPage=0
+  renderWork()
+}
+
+function getFilterRange(){
+  const t=today()
+  if(workFilter===0)return {start:0,end:9999999999999,label:'全部记录'}
+  if(workFilter===1)return {start:t,end:t+86400000,label:'今日记录'}
+  if(workFilter===2){const w=weekStart(t);return {start:w,end:w+604800000,label:'本周记录'}}
+  const m=monthStart(t);const d=new Date(m);d.setMonth(d.getMonth()+1);return {start:m,end:d.getTime(),label:'本月记录'}
+}
+
+// ===== RENDER WORK =====
+function renderWork(){
+  const {start,end,label}=getFilterRange()
+  document.getElementById('workSectionTitle').textContent=label
+  const duties=STORE.duties.get().filter(r=>r.date>=start&&r.date<end)
+  const teachings=STORE.teachings.get().filter(r=>r.date>=start&&r.date<end)
+  const combined=[]
+  duties.forEach(d=>combined.push({...d,type:'duty'}))
+  teachings.forEach(t=>combined.push({...t,type:'teaching'}))
+  combined.sort((a,b)=>b.date-a.date||b.createdAt-a.createdAt)
+  const list=document.getElementById('workList')
+  
+  const todayStart=today()
+  const todayEnd=todayStart+86400000
+  const todayDuties=STORE.duties.get().filter(d=>d.date>=todayStart&&d.date<todayEnd)
+  const todayTeachings=STORE.teachings.get().filter(t=>t.date>=todayStart&&t.date<todayEnd)
+  const todayCount=todayDuties.length+todayTeachings.length
+  document.getElementById('workBadge').textContent=todayCount>99?'99+':todayCount;document.getElementById('workBadge').style.display=todayCount?'inline':'none'
+
+  if(combined.length===0){
+    list.innerHTML=`<div class="empty"><div class="icon">📋</div>暂无记录<br>点击右上角「+ 新增记录」开始添加</div>`
+    return
+  }
+  
+  var pageSize=__g.workPageSize
+  var currentPage=__g.workPage
+  var totalItems=combined.length
+  var displayCount=pageSize*(currentPage+1)
+  if(displayCount>totalItems)displayCount=totalItems
+  var pageItems=combined.slice(0,displayCount)
+  
+  list.innerHTML=pageItems.map(item=>{
+    const d=fmtDate(item.date)
+    const dd=String(new Date(item.date).getDate()).padStart(2,' ')
+    const mm=String(new Date(item.date).getMonth()+1)
+    if(item.type==='duty'){
+      const shiftMap={MORNING:'早班',EVENING:'晚班',ALL_DAY:'通班'}
+      const colorMap={MORNING:'tag-orange',EVENING:'tag-green',ALL_DAY:'tag-purple'}
+      const shift=shiftMap[item.shiftType]||'值班'
+      const color=colorMap[item.shiftType]||'tag-blue'
+      return '<div class="row" onclick="deleteDuty(\''+item.id+'\')"><div class="rd"><div class="d">'+dd+'</div><div class="m">'+mm+'月</div></div><div class="ri"><div class="n">'+escapeHtml(item.staffName)+'</div><div class="meta"><span class="tag tag-blue">值班</span><span class="tag '+color+'">'+shift+'</span> '+item.startTime+' – '+item.endTime+'<span class="del">删除</span></div></div></div>'
+    }else{
+      return '<div class="row" onclick="deleteTeaching(\''+item.id+'\')"><div class="rd"><div class="d">'+dd+'</div><div class="m">'+mm+'月</div></div><div class="ri"><div class="n">'+escapeHtml(item.courseType)+'</div><div class="meta"><span class="tag tag-red">授课</span> '+escapeHtml(item.staffName)+' · '+item.participantCount+'人 · '+item.hours+' 课时<span class="del">删除</span></div></div></div>'
+    }
+  }).join('')
+  
+  if(displayCount<totalItems){
+    list.innerHTML+='<div style="text-align:center;padding:12px 0"><button class="btn-secondary" onclick="loadMoreWork()" style="display:inline-block;width:auto;padding:8px 24px">加载更多（'+(totalItems-displayCount)+' 条）</button></div>'
+  }
+}
+
+function loadMoreWork(){
+  __g.workPage++
+  renderWork()
+}
+
+// ===== ADD RECORD MENU =====
+function showAddRecordModal(){
+  const staff = STORE.staff.get()
+  if(!staff.length){toast('请先在「管理」中添加工作人员');return}
+  showModal('新增记录', `
+    <div style="padding: 20px 0;">
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <button class="btn-add" onclick="hideModal();showDutyModal()" style="background: var(--text);">
+          <svg class="icon" viewBox="0 0 24 24" style="width: 20px; height: 20px; margin-right: 8px; stroke: currentColor; fill: none;"><path d="M3 12h18M12 3v18"/></svg>
+          + 添加值班记录
+        </button>
+        <button class="btn-secondary" onclick="hideModal();showTeachingModal()">
+          <svg class="icon" viewBox="0 0 24 24" style="width: 20px; height: 20px; margin-right: 8px; stroke: currentColor; fill: none;"><path d="M12 2 L21 21 L12 17 L3 21 Z"/></svg>
+          + 添加授课记录
+        </button>
+        <button class="btn-secondary" onclick="hideModal();showOperationModal()">
+          <svg class="icon" viewBox="0 0 24 24" style="width: 20px; height: 20px; margin-right: 8px; stroke: currentColor; fill: none;"><path d="M3 3h7v7H3zm11 0h7v7h-7zm0 11h7v7h-7zM3 14h7v7H3z"/></svg>
+          + 添加运营数据
+        </button>
+      </div>
+    </div>
+    <div class="btns">
+      <button class="btn-cancel" onclick="hideModal()">取消</button>
+    </div>
+  `)
+}
+
+// ===== DUTY CRUD =====
+function showDutyModal(){
+  const staff=STORE.staff.get()
+  if(!staff.length){toast('请先在「管理」中添加工作人员');return}
+  const staffChips=staff.map((s,i)=>'<span class="stf" data-id="'+s.id+'" onclick="selStaff(this,'+i+')">'+s.name+'</span>').join('')
+  
+  const now=new Date()
+  const nowH=now.getHours()
+  const nowM=now.getMinutes()
+  let defShift='MORNING'
+  let defStart='08:00'
+  let defEnd='16:00'
+  
+  if(nowH>=14&&nowH<22){
+    defShift='EVENING'
+    defStart='14:00'
+    defEnd='22:00'
+  } else if(nowH>=22||nowH<8){
+    defShift='ALL_DAY'
+    defStart='08:00'
+    defEnd='22:00'
+  }
+  
+  if(nowH>=8&&nowH<22){
+    defStart=pad(nowH)+':'+pad(nowM)
+  }
+  
+  showModal('新增值班记录',`
+    <div class="mg"><label>值班人员</label><div class="staff-tags" id="dutyStaff">${staffChips}</div></div>
+    <div class="mg"><label>班次</label><div class="chips" id="dutyShift">
+      <span class="chip ${defShift==='MORNING'?'sel':''}" data-group="dutyShift" data-val="MORNING" onclick="selChip(this)">早班 <small>08:00-16:00</small></span>
+      <span class="chip ${defShift==='EVENING'?'sel':''}" data-group="dutyShift" data-val="EVENING" onclick="selChip(this)">晚班 <small>14:00-22:00</small></span>
+      <span class="chip ${defShift==='ALL_DAY'?'sel':''}" data-group="dutyShift" data-val="ALL_DAY" onclick="selChip(this)">通班 <small>08:00-22:00</small></span>
+    </div></div>
+    <div class="mg"><label>时间</label><div style="display:flex;gap:8px"><input type="time" id="dutyStart" value="${defStart}"><input type="time" id="dutyEnd" value="${defEnd}"></div></div>
+    <div class="mg"><label>日期</label><input type="date" id="dutyDate" value="${new Date().toISOString().slice(0,10)}"></div>
+    <div class="mg"><label>备注</label><input type="text" id="dutyRemark" placeholder="可选"></div>
+    <div class="btns"><button class="btn-cancel" onclick="hideModal()">取消</button><button class="btn-confirm" onclick="saveDuty()">保存</button></div>
+  `)
+  setTimeout(()=>{
+    const sel=document.querySelectorAll('#dutyStaff .stf')
+    if(sel.length)sel[0].classList.add('sel')
+  },50)
+}
+function selStaff(el,idx){
+  document.querySelectorAll('#dutyStaff .stf').forEach(s=>s.classList.remove('sel'))
+  el.classList.add('sel')
+  __g.dutyStaffId=el.dataset.id
+}
+function selChip(el){
+  var group=el.dataset.group
+  var val=el.dataset.val
+  document.querySelectorAll('#'+group+' .chip').forEach(c=>c.classList.remove('sel'))
+  el.classList.add('sel')
+  if(group==='teachType'){
+    __g.teachType=val
+    var customWrap=document.getElementById('customTypeWrap')
+    if(customWrap)customWrap.style.display=val==='other'?'block':'none'
+  }
+  if(group==='rptPeriod') __g.rptPeriod=val
+  if(group==='dutyShift'){
+    var start=document.getElementById('dutyStart'),end=document.getElementById('dutyEnd')
+    if(val==='MORNING'){start.value='08:00';end.value='16:00'}
+    else if(val==='EVENING'){start.value='14:00';end.value='22:00'}
+    else{start.value='08:00';end.value='22:00'}
+  }
+  if(group==='bookSlot'){
+    var start=document.getElementById('bookStart'),end=document.getElementById('bookEnd')
+    if(val==='MORNING'){start.value='08:00';end.value='12:00'}
+    else if(val==='AFTERNOON'){start.value='14:00';end.value='18:00'}
+    else{start.value='08:00';end.value='22:00'}
+  }
+  if(group==='rptPeriod'){
+    var customRange=document.getElementById('rptCustomRange')
+    if(customRange)customRange.style.display=val==='custom'?'block':'none'
+  }
+}
+
+function saveDuty(){
+  const staff=STORE.staff.get()
+  const selStaff=document.querySelector('#dutyStaff .stf.sel')
+  if(!selStaff){toast('请选择值班人员');return}
+  const staffId=selStaff.dataset.id
+  const staffName=selStaff.textContent
+  const shiftType=document.querySelector('#dutyShift .chip.sel')?.dataset.val||'MORNING'
+  const start=document.getElementById('dutyStart').value
+  const end=document.getElementById('dutyEnd').value
+  const date=new Date(document.getElementById('dutyDate').value).getTime()
+  const remark=document.getElementById('dutyRemark').value
+  if(!start||!end){toast('请选择时间');return}
+  const duties=STORE.duties.get()
+  duties.unshift({id:uuid(),staffId,staffName,date,shiftType,startTime:start,endTime:end,remark,createdAt:Date.now()})
+  STORE.duties.set(duties)
+  hideModal()
+  toast('值班记录已添加')
+}
+
+function deleteDuty(id){
+  showDialog('删除值班记录','确定删除这条记录吗？',()=>{
+    __g._undo['duty_'+id]=STORE.duties.get()
+    let duties=STORE.duties.get()
+    duties=duties.filter(d=>d.id!==id)
+    STORE.duties.set(duties)
+    showUndoToast('值班记录已删除','duty_'+id,function(){
+      STORE.duties.set(__g._undo['duty_'+id])
+      delete __g._undo['duty_'+id]
+    })
+  })
+}
+
+// ===== TEACHING CRUD =====
+function showTeachingModal(){
+  const staff=STORE.staff.get()
+  if(!staff.length){toast('请先在「管理」中添加工作人员');return}
+  const staffChips=staff.map((s,i)=>'<span class="stf" data-id="'+s.id+'" onclick="selStaff(this,'+i+')">'+s.name+'</span>').join('')
+  const types=STORE.courseTypes.get()
+  const typeChips=types.map((t,i)=>'<span class="chip '+(i===0?'sel':'')+'" data-group="teachType" data-val="'+t+'" onclick="selChip(this)">'+t+'</span>').join('')
+  showModal('新增授课记录',`
+    <div class="mg"><label>教练</label><div class="staff-tags" id="dutyStaff">${staffChips}</div></div>
+    <div class="mg"><label>课程类型</label><div class="chips" id="teachType">${typeChips}<span class="chip" data-group="teachType" data-val="other" onclick="selChip(this)" style="border-style:dashed">自定义+</span></div></div>
+    <div class="mg" id="customTypeWrap" style="display:none"><label>自定义课程类型</label><input type="text" id="customType" placeholder="输入课程名称"></div>
+    <div class="mg"><label>人数</label><input type="number" id="teachCount" value="1" min="1"></div>
+    <div class="mg"><label>课时数</label><input type="number" id="teachHours" value="1.5" step="0.5" min="0.5"></div>
+    <div class="mg"><label>日期</label><input type="date" id="teachDate" value="${new Date().toISOString().slice(0,10)}"></div>
+    <div class="btns"><button class="btn-cancel" onclick="hideModal()">取消</button><button class="btn-confirm" onclick="saveTeaching()">保存</button></div>
+  `)
+  setTimeout(()=>{
+    const sel=document.querySelectorAll('#dutyStaff .stf')
+    if(sel.length)sel[0].classList.add('sel')
+    __g.teachType=STORE.courseTypes.get()[0]||''
+  },50)
+}
+
+function saveTeaching(){
+  const selStaff=document.querySelector('#dutyStaff .stf.sel')
+  if(!selStaff){toast('请选择教练');return}
+  const staffId=selStaff.dataset.id,staffName=selStaff.textContent
+  const selType=document.querySelector('#teachType .chip.sel')
+  let courseType=__g.teachType
+  if(courseType==='other'){
+    courseType=document.getElementById('customType').value.trim()
+    if(!courseType){toast('请输入课程类型');return}
+  }
+  const count=parseInt(document.getElementById('teachCount').value)
+  const hours=parseFloat(document.getElementById('teachHours').value)
+  const date=new Date(document.getElementById('teachDate').value).getTime()
+  if(!count||count<1){toast('请输入有效人数');return}
+  if(!hours||hours<0.5){toast('请输入有效课时');return}
+  const teachings=STORE.teachings.get()
+  teachings.unshift({id:uuid(),staffId,staffName,courseType,participantCount:count,hours,date,createdAt:Date.now()})
+  STORE.teachings.set(teachings)
+  hideModal()
+  toast('授课记录已添加')
+}
+
+function deleteTeaching(id){
+  showDialog('删除授课记录','确定删除这条记录吗？',()=>{
+    __g._undo['teach_'+id]=STORE.teachings.get()
+    let teachings=STORE.teachings.get()
+    teachings=teachings.filter(t=>t.id!==id)
+    STORE.teachings.set(teachings)
+    showUndoToast('授课记录已删除','teach_'+id,function(){
+      STORE.teachings.set(__g._undo['teach_'+id])
+      delete __g._undo['teach_'+id]
+    })
+  })
+}
+
+// ===== CALENDAR =====
+let calYear=now.getFullYear(),calMonth=now.getMonth()
+function prevMonth(){calMonth--;if(calMonth<0){calMonth=11;calYear--}renderCalendar()}
+function nextMonth(){calMonth++;if(calMonth>11){calMonth=0;calYear++}renderCalendar()}
+
+function renderCalendar(){
+  document.getElementById('calMonth').textContent=calYear+' 年 '+(calMonth+1)+' 月'
+  const grid=document.getElementById('calGrid')
+  const first=new Date(calYear,calMonth,1)
+  const daysInMonth=new Date(calYear,calMonth+1,0).getDate()
+  const startDow=first.getDay()===0?6:first.getDay()-1
+  let html='<div class="wd">一</div><div class="wd">二</div><div class="wd">三</div><div class="wd">四</div><div class="wd">五</div><div class="wd">六</div><div class="wd">日</div>'
+  for(let i=0;i<startDow;i++)html+='<div></div>'
+  const bookings=STORE.bookings.get()
+  const bookingDates=new Set()
+  bookings.forEach(b=>bookingDates.add(dateKey(b.date)))
+  
+  const todayMs=today()
+  const calDateMs=new Date(calYear,calMonth,1).getTime()
+  
+  for(let d=1;d<=daysInMonth;d++){
+    const date=new Date(calYear,calMonth,d)
+    const ms=date.getTime()
+    const key=dateKey(ms)
+    const isToday=ms===todayMs
+    const hasBooking=bookingDates.has(key)
+    const cls='cl'+(isToday?' tdy':'')+(hasBooking?' nt':'')
+    html+='<div class="'+cls+'" data-ts="'+ms+'" onclick="selectCalDate(this)">'+d+'</div>'
+  }
+  grid.innerHTML=html
+  selectCalDate(grid.querySelector('.cl.tdy') || grid.querySelector('.cl'))
+}
+
+let selectedCalMs = today()
+
+function selectCalDate(el) {
+  const ms = parseInt(el.dataset.ts)
+  if (isNaN(ms)) return
+  selectedCalMs = ms
+  document.querySelectorAll('#calGrid .cl').forEach(c => c.classList.remove('sel'))
+  el.classList.add('sel')
+  renderCalEvents(ms)
+}
+
+function renderCalEvents(ms){
+  const container=document.getElementById('calEvents')
+  const bookings=STORE.bookings.get().filter(b=>dateKey(b.date)===dateKey(ms))
+  const dt=fmtDate(ms)
+  container.innerHTML='<div class="etitle">'+dt+' · '+bookings.length+' 个预约</div>'
+  if(!bookings.length){
+    container.innerHTML+='<div class="empty"><div class="icon">📅</div>暂无预约</div>'
+    return
+  }
+  bookings.forEach(b=>{
+    const colorMap={MORNING:['var(--accent)','上午'],AFTERNOON:['#ff9500','下午'],FULL_DAY:['#34c759','全天']}
+    const [clr,txt]=colorMap[b.timeSlot]||[colorMap.MORNING[0],b.timeSlot]
+    container.innerHTML+='<div class="ev" style="border-left-color:'+clr+'" onclick="deleteBooking(\''+b.id+'\')"><div class="et2" style="color:'+clr+'">'+txt+'</div><div class="ei2"><div class="m">'+b.bookingSubject+' · '+b.zoneNames+'</div><div class="s">对接 '+b.contactPerson+' · '+b.participantCount+' 人</div></div></div>'
+  })
+}
+
+// ===== BOOKING CRUD =====
+function showBookingModal(){
+  const zones=STORE.zones.get()
+  const zoneChips=zones.map((z,i)=>'<span class="chip" onclick="toggleBookZone(this,\''+z+'\')">'+z+'</span>').join('')
+  const staff=STORE.staff.get()
+  const staffChips=staff.map((s,i)=>(i===0?'<span class="stf sel" data-id="'+s.id+'" onclick="selBookStaff(this)">'+s.name+'</span>':'<span class="stf" data-id="'+s.id+'" onclick="selBookStaff(this)">'+s.name+'</span>')).join('')
+  showModal('新增预约',`
+    <div class="mg"><label>预约主体</label><input type="text" id="bookSubject" placeholder="如：某分会"></div>
+    <div class="mg"><label>活动方案</label><input type="text" id="bookPlan" placeholder="如：团建活动"></div>
+    <div class="mg"><label>功能区 <small style="color:var(--text3)">可多选</small></label><div class="chips" id="bookZone">${zoneChips}</div></div>
+    <div class="mg"><label>时段</label><div class="chips" id="bookSlot">
+      <span class="chip sel" data-group="bookSlot" data-val="MORNING" onclick="selChip(this)">上午</span>
+      <span class="chip" data-group="bookSlot" data-val="AFTERNOON" onclick="selChip(this)">下午</span>
+      <span class="chip" data-group="bookSlot" data-val="FULL_DAY" onclick="selChip(this)">全天</span>
+    </div></div>
+    <div class="mg"><label>时间</label><div style="display:flex;gap:8px"><input type="time" id="bookStart" value="08:00"><input type="time" id="bookEnd" value="12:00"></div></div>
+    <div class="mg"><label>日期</label><input type="date" id="bookDate" value="${new Date(selectedCalMs).toISOString().slice(0,10)}"></div>
+    <div class="mg"><label>人数</label><input type="number" id="bookCount" value="10" min="1"></div>
+    <div class="mg"><label>对接人</label><div class="staff-tags" id="bookStaff">${staffChips||'<span style="color:var(--text3)">请先添加工作人员</span>'}</div></div>
+    <div class="mg"><label>备注</label><input type="text" id="bookRemark" placeholder="可选"></div>
+    <div class="btns"><button class="btn-cancel" onclick="hideModal()">取消</button><button class="btn-confirm" onclick="saveBooking()">保存</button></div>
+  `)
+  window.__g.bookZone=STORE.zones.get()[0]||''
+  window.__g.bookStaffId=staff.length?staff[0].id:null
+}
+function toggleBookZone(el,zoneName){
+  el.classList.toggle('sel')
+}
+function selBookStaff(el){
+  document.querySelectorAll('#bookStaff .stf').forEach(s=>s.classList.remove('sel'))
+  el.classList.add('sel')
+  __g.bookStaffId=el.dataset.id
+}
+
+function saveBooking(){
+  const subject=document.getElementById('bookSubject').value.trim()
+  if(!subject){toast('请输入预约主体');return}
+  const plan=document.getElementById('bookPlan').value.trim()
+  const zoneEls=document.querySelectorAll('#bookZone .chip.sel')
+  const zoneNames=Array.from(zoneEls).map(el=>el.textContent).join('、')
+  if(!zoneNames){toast('请至少选择一个功能区');return}
+  const slot=document.querySelector('#bookSlot .chip.sel')?.dataset.val||'MORNING'
+  const start=document.getElementById('bookStart').value
+  const end=document.getElementById('bookEnd').value
+  const date=new Date(document.getElementById('bookDate').value).getTime()
+  const count=parseInt(document.getElementById('bookCount').value)
+  const selStaff=document.querySelector('#bookStaff .stf.sel')
+  if(!selStaff){toast('请选择对接人');return}
+  const contactPerson=selStaff.textContent
+  const bookings=STORE.bookings.get()
+  bookings.unshift({id:uuid(),bookingSubject:subject,activityPlan:plan,date,timeSlot:slot,startTime:start,endTime:end,zoneIds:'',zoneNames,participantCount:count,contactPerson,remark:document.getElementById('bookRemark').value,createdAt:Date.now()})
+  STORE.bookings.set(bookings)
+  hideModal()
+  toast('预约已添加')
+}
+
+function deleteBooking(id){
+  showDialog('删除预约','确定删除这条预约吗？',()=>{
+    __g._undo['book_'+id]=STORE.bookings.get()
+    let bookings=STORE.bookings.get()
+    bookings=bookings.filter(b=>b.id!==id)
+    STORE.bookings.set(bookings)
+    showUndoToast('预约已删除','book_'+id,function(){
+      STORE.bookings.set(__g._undo['book_'+id])
+      delete __g._undo['book_'+id]
+    })
+  })
+}
+
+// ===== STATISTICS =====
+let statsTab=0,statsPeriod=0
+function switchStatsTab(i){
+  document.querySelectorAll('.subt .st').forEach((t,idx)=>t.classList.toggle('act',idx===i))
+  statsTab=i;renderStats()
+}
+function switchStatsPeriod(i){
+  document.querySelectorAll('.prd span').forEach((p,idx)=>p.classList.toggle('act',idx===i))
+  statsPeriod=i;renderStats()
+}
+
+function getDateRange(){
+  const now=new Date()
+  const y=now.getFullYear()
+  if(statsPeriod===2)return {start:new Date(y,0,1).getTime(),end:new Date(y+1,0,1).getTime(),label:y+' 年'}
+  const q=Math.floor(now.getMonth()/3)
+  const sq=statsPeriod===0?q:q-1
+  const sy=y,sm=sq*3
+  return {start:new Date(sy,sm,1).getTime(),end:new Date(sy,sm+3,1).getTime(),label:sy+' 年第 '+(sq+1)+' 季度'}
+}
+
+function renderStats(){
+  const {start,end,label}=getDateRange()
+  const container=document.getElementById('statsContent')
+  if(statsTab===0){
+    const duties=STORE.duties.get().filter(d=>d.date>=start&&d.date<end)
+    const staffMap={}
+    duties.forEach(d=>{
+      const key=String(d.staffId)
+      if(!staffMap[key])staffMap[key]={name:d.staffName,morning:0,evening:0,allday:0,total:0}
+      const s=staffMap[key]
+      s.total++
+      if(d.shiftType==='MORNING')s.morning++
+      else if(d.shiftType==='EVENING')s.evening++
+      else s.allday++
+    })
+    const sorted=Object.values(staffMap).sort((a,b)=>b.total-a.total)
+    const totalDuties=duties.length
+    const staffCount=Object.keys(staffMap).length
+    container.innerHTML='<div class="hero"><div class="hl">'+label+'</div><div class="hr"><div class="hi"><div class="num">'+totalDuties+'</div><div class="lb">总值班人次</div></div><div class="hi"><div class="num">'+staffCount+'</div><div class="lb">值班人员</div></div></div></div>'
+    if(!sorted.length){container.innerHTML+='<div class="empty"><div class="icon">📊</div>暂无数据</div>';return}
+    container.innerHTML+=sorted.map(s=>{
+      let details='早班 '+s.morning+' 次'
+      if(s.evening)details+=' · 晚班 '+s.evening+' 次'
+      if(s.allday)details+=' · 通班 '+s.allday+' 次'
+      return '<div class="srow"><div class="sleft"><div class="sn">'+s.name+'</div><div class="sd">'+details+'</div></div><div class="scount">'+s.total+' 次</div></div>'
+    }).join('')
+  }else if(statsTab===1){
+    const teachings=STORE.teachings.get().filter(t=>t.date>=start&&t.date<end)
+    const allTeachings=STORE.teachings.get()
+    const staffMap={}
+    teachings.forEach(t=>{
+      const key=String(t.staffId)
+      if(!staffMap[key])staffMap[key]={name:t.staffName,hours:0,count:0,participants:0,staffId:t.staffId}
+      const s=staffMap[key]
+      s.hours+=t.hours;s.count++;s.participants+=t.participantCount
+    })
+    const sorted=Object.values(staffMap).sort((a,b)=>b.hours-a.hours)
+    const totalHours=teachings.reduce((s,t)=>s+t.hours,0)
+    const totalParts=teachings.reduce((s,t)=>s+t.participantCount,0)
+    container.innerHTML='<div class="hero"><div class="hl">'+label+'</div><div class="hr"><div class="hi"><div class="num">'+totalHours.toFixed(1)+'</div><div class="lb">总课时</div></div><div class="hi"><div class="num">'+totalParts+'</div><div class="lb">总参与人次</div></div></div></div>'
+    if(!sorted.length){container.innerHTML+='<div class="empty"><div class="icon">📊</div>暂无数据</div>';return}
+    container.innerHTML+=sorted.map(s=>{
+      const histHours=allTeachings.filter(t=>String(t.staffId)===String(s.staffId)).reduce((h,t)=>h+t.hours,0)
+      return '<div class="srow"><div class="sleft"><div class="sn">'+s.name+'</div><div class="sd">'+s.count+' 次授课 · '+s.participants+' 人次 · 历史累计 '+histHours.toFixed(1)+' 课时</div></div><div class="scount">'+s.hours.toFixed(1)+' 课时</div></div>'
+    }).join('')
+  }else{
+    const opsFiltered=STORE.operations.get().filter(o=>o.date>=start&&o.date<end)
+    const opsTotal=opsFiltered.reduce((s,o)=>s+o.totalVisitors,0)
+    const bookingsCount=STORE.bookings.get().length
+
+    const nowDate=new Date()
+    const opStartDate=new Date(2026,0,17)
+    const months=(nowDate.getFullYear()-opStartDate.getFullYear())*12+(nowDate.getMonth()-opStartDate.getMonth())+1
+
+    container.innerHTML='<div class="hero"><div class="hl">'+label+'</div><div class="hr"><div class="hi"><div class="num">'+opsTotal+'</div><div class="lb">周期内入馆人数</div></div><div class="hi"><div class="num">'+months+'</div><div class="lb">运营月数</div></div><div class="hi"><div class="num">'+bookingsCount+'</div><div class="lb">历史预约总数</div></div></div></div>'
+    if(opsFiltered.length){
+      const sorted=[...opsFiltered].sort((a,b)=>b.date-a.date)
+      container.innerHTML+=sorted.map(o=>{
+        const d=new Date(o.date)
+        const label=d.getFullYear()+'年'+(d.getMonth()+1)+'月'
+        return '<div class="srow"><div class="sleft"><div class="sn">'+label+'</div><div class="sd">入馆 '+o.totalVisitors+' 人'+(o.remark?'（'+escapeHtml(o.remark)+'）':'')+'</div></div><div class="scount" style="background:rgba(255,59,48,0.06);color:#ff3b30;cursor:pointer" onclick="deleteOperation(\''+o.id+'\')">删除</div></div>'
+      }).join('')
+    }else{
+      container.innerHTML+='<div class="empty"><div class="icon">📊</div>该周期暂无运营数据</div>'
+    }
+  }
+}
+
+function showOperationModal(){
+  const now=new Date()
+  const defMonth=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')
+  showModal('添加运营数据',`
+    <div class="mg"><label>统计月份</label><input type="month" id="opMonthPicker" value="${defMonth}"></div>
+    <div class="mg"><label>本月入馆总人数</label><input type="number" id="opVisitors" value="0" min="0"></div>
+    <div class="mg"><label>备注</label><input type="text" id="opRemark" placeholder="可选"></div>
+    <div class="btns"><button class="btn-cancel" onclick="hideModal()">取消</button><button class="btn-confirm" onclick="saveOperation()">保存</button></div>
+  `)
+}
+
+function saveOperation(){
+  const monthVal=document.getElementById('opMonthPicker').value
+  if(!monthVal){toast('请选择月份');return}
+  const [year,month]=monthVal.split('-').map(Number)
+  const visitors=parseInt(document.getElementById('opVisitors').value)
+  if(!visitors){toast('请输入人数');return}
+  const recordedDate=new Date(year,month-1,1).getTime()
+  const ops=STORE.operations.get()
+  ops.unshift({id:uuid(),monthNumber:month,year,date:recordedDate,totalVisitors:visitors,remark:document.getElementById('opRemark').value})
+  STORE.operations.set(ops)
+  hideModal()
+  toast('运营数据已添加')
+}
+
+function deleteOperation(id){
+  showDialog('删除运营记录','确定删除这月的数据吗？',()=>{
+    __g._undo['op_'+id]=STORE.operations.get()
+    let ops=STORE.operations.get()
+    ops=ops.filter(o=>o.id!==id)
+    STORE.operations.set(ops)
+    showUndoToast('运营记录已删除','op_'+id,function(){
+      STORE.operations.set(__g._undo['op_'+id])
+      delete __g._undo['op_'+id]
+    })
+  })
+}
+
+// ===== SETTINGS =====
+function showStaffModal(){
+  const staff=STORE.staff.get()
+  const list=staff.map(s=>'<div class="dl-item"><span class="dl-name">'+escapeHtml(s.name)+(s.remark?' <small style="color:var(--text3)">('+escapeHtml(s.remark)+')</small>':'')+'</span><span class="dl-del" onclick="deleteStaff(\''+s.id+'\')">删除</span></div>').join('')
+  showModal('工作人员管理',`
+    <div class="data-list">${list||'<div class="empty"><div class="icon">👤</div>暂无工作人员</div>'}</div>
+    <div class="data-list"><div class="dl-add"><input type="text" id="staffNameInput" placeholder="输入姓名" inputmode="text" autocomplete="off" style="font-size:16px;min-width:120px;direction:ltr;unicode-bidi:plaintext"></div><div class="dl-add" style="margin-top:4px"><select id="staffRemarkSelect" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-size:14px;outline:none;background:var(--bg)"><option value="值班人员">值班人员</option><option value="顶班人员">顶班人员</option></select><button class="dl-add-btn" onclick="addStaff()">添加</button></div></div>
+    <div class="btns"><button class="btn-cancel" onclick="hideModal()">完成</button></div>
+  `)
+}
+
+function addStaff(){
+  const name=document.getElementById('staffNameInput').value.trim()
+  if(!name){toast('请输入姓名');return}
+  const remark=document.getElementById('staffRemarkSelect').value
+  const staff=STORE.staff.get()
+  staff.push({id:uuid(),name,remark,createdAt:Date.now()})
+  STORE.staff.set(staff)
+  showStaffModal()
+  toast('已添加 '+name)
+}
+
+function deleteStaff(id){
+  var relatedDuties=STORE.duties.get().filter(function(d){return d.staffId===id})
+  var relatedTeachings=STORE.teachings.get().filter(function(t){return t.staffId===id})
+  var relatedLeaves=STORE.leaves.get().filter(function(l){return l.staffId===id})
+  var relatedAttendance=STORE.attendance.get().filter(function(a){return a.staffId===id})
+  
+  var dutyCount=relatedDuties.length
+  var teachCount=relatedTeachings.length
+  var leaveCount=relatedLeaves.length
+  var attendanceCount=relatedAttendance.length
+  var totalCount=dutyCount+teachCount+leaveCount+attendanceCount
+  
+  var msg='确定删除吗？相关记录不会丢失'
+  if(totalCount>0){
+    var details=[]
+    if(dutyCount>0) details.push('值班 '+dutyCount+' 条')
+    if(teachCount>0) details.push('授课 '+teachCount+' 条')
+    if(leaveCount>0) details.push('请假 '+leaveCount+' 条')
+    if(attendanceCount>0) details.push('考勤 '+attendanceCount+' 条')
+    msg='该人员有 '+totalCount+' 条关联记录（'+details.join('、')+'），确定删除？'
+  }
+  showDialog('删除工作人员',msg,function(){
+    if(totalCount>0){
+      var duties=STORE.duties.get()
+      duties.forEach(function(d){
+        if(d.staffId===id)d.staffName='[已删除]'
+      })
+      STORE.duties.set(duties)
+      var teachings=STORE.teachings.get()
+      teachings.forEach(function(t){
+        if(t.staffId===id)t.staffName='[已删除]'
+      })
+      STORE.teachings.set(teachings)
+      var leaves=STORE.leaves.get()
+      leaves.forEach(function(l){
+        if(l.staffId===id)l.staffName='[已删除]'
+      })
+      STORE.leaves.set(leaves)
+      var attendance=STORE.attendance.get()
+      attendance.forEach(function(a){
+        if(a.staffId===id)a.staffName='[已删除]'
+      })
+      STORE.attendance.set(attendance)
+    }
+    var staff=STORE.staff.get()
+    staff=staff.filter(function(s){return s.id!==id})
+    STORE.staff.set(staff)
+    showStaffModal()
+    toast('已删除')
+  })
+}
+
+function showZonesModal(){
+  const zones=STORE.zones.get()
+  const list=zones.map((z,i)=>'<div class="dl-item"><span class="dl-name">'+escapeHtml(z)+'</span><span class="dl-del" onclick="deleteZoneByIndex('+i+')">删除</span></div>').join('')
+  showModal('功能区配置',`
+    <div class="data-list">${list||'<div class="empty"><div class="icon">📍</div>暂无功能区</div>'}</div>
+    <div class="data-list"><div class="dl-add"><input type="text" id="zoneInput" placeholder="输入功能区名称"><button class="dl-add-btn" onclick="addZone()">添加</button></div></div>
+    <div class="btns"><button class="btn-cancel" onclick="hideModal()">完成</button></div>
+  `)
+}
+function addZone(){
+  const name=document.getElementById('zoneInput').value.trim()
+  if(!name){toast('请输入名称');return}
+  const zones=STORE.zones.get()
+  zones.push(name)
+  STORE.zones.set(zones)
+  showZonesModal()
+  toast('已添加')
+}
+function deleteZone(name){
+  showDialog('删除功能区','确定删除吗？',()=>{
+    let zones=STORE.zones.get()
+    zones=zones.filter(z=>z!==name)
+    STORE.zones.set(zones)
+    showZonesModal()
+    toast('已删除')
+  })
+}
+function deleteZoneByIndex(i){
+  const zones=STORE.zones.get()
+  const name=zones[i]
+  if(name)deleteZone(name)
+}
+
+function showCourseTypesModal(){
+  const types=STORE.courseTypes.get()
+  const list=types.map((t,i)=>'<div class="dl-item"><span class="dl-name">'+escapeHtml(t)+'</span><span class="dl-del" onclick="deleteCourseTypeByIndex('+i+')">删除</span></div>').join('')
+  showModal('上课类型配置',`
+    <div class="data-list">${list||'<div class="empty"><div class="icon">📚</div>暂无课程类型</div>'}</div>
+    <div class="data-list"><div class="dl-add"><input type="text" id="ctInput" placeholder="输入课程类型名称"><button class="dl-add-btn" onclick="addCourseType()">添加</button></div></div>
+    <div class="btns"><button class="btn-cancel" onclick="hideModal()">完成</button></div>
+  `)
+}
+function addCourseType(){
+  const name=document.getElementById('ctInput').value.trim()
+  if(!name){toast('请输入名称');return}
+  const types=STORE.courseTypes.get()
+  types.push(name)
+  STORE.courseTypes.set(types)
+  showCourseTypesModal()
+  toast('已添加')
+}
+function deleteCourseType(name){
+  showDialog('删除课程类型','确定删除吗？',()=>{
+    let types=STORE.courseTypes.get()
+    types=types.filter(t=>t!==name)
+    STORE.courseTypes.set(types)
+    showCourseTypesModal()
+    toast('已删除')
+  })
+}
+function deleteCourseTypeByIndex(i){
+  const types=STORE.courseTypes.get()
+  const name=types[i]
+  if(name)deleteCourseType(name)
+}
+
+// ===== REPORT TEMPLATE EDITOR =====
+const REPORT_VARS = [
+  {label:'汇报周期', var:'period'},
+  {label:'生成日期', var:'date'},
+  {label:'值班总人次', var:'duty_count'},
+  {label:'值班人员数', var:'duty_staff_count'},
+  {label:'人员值班详情', var:'duty_details'},
+  {label:'授课总次数', var:'teach_count'},
+  {label:'总课时', var:'teach_hours'},
+  {label:'学员总人次', var:'teach_participants'},
+  {label:'授课教练数', var:'teach_staff_count'},
+  {label:'教练授课详情', var:'teach_details'},
+  {label:'预约总场次', var:'booking_count'},
+  {label:'使用功能区数', var:'booking_zones_count'},
+  {label:'预约总人数', var:'booking_total_participants'},
+  {label:'预约详情', var:'booking_details'},
+  {label:'总入馆人数', var:'visitor_total'},
+  {label:'运营记录周数', var:'op_weeks'},
+  {label:'平均每周入馆', var:'op_avg_visitors'},
+  {label:'运营数据详情', var:'op_details'},
+  {label:'工作人员数', var:'staff_count'},
+  {label:'值班早班次数', var:'duty_morning'},
+  {label:'值班晚班次数', var:'duty_evening'},
+  {label:'值班通班次数', var:'duty_allday'}
+]
+
+function getDefaultReportTemplate(){
+  return [
+    '='.repeat(40),
+    '  团队工作量汇报 —— {{period}}',
+    '='.repeat(40),
+    '',
+    '汇报周期：{{period}}',
+    '生成日期：{{date}}',
+    '',
+    '一、值班概况',
+    '',
+    '{{duty_count_text}}',
+    '{{duty_details}}',
+    '',
+    '二、授课概况',
+    '',
+    '{{teach_count_text}}',
+    '{{teach_details}}',
+    '',
+    '三、预约接待',
+    '',
+    '{{booking_count_text}}',
+    '{{booking_details}}',
+    '',
+    '四、运营概况',
+    '',
+    '{{op_summary_text}}',
+    '{{op_details}}',
+    '',
+    '五、总体情况',
+    '',
+    '{{conclusion_text}}',
+    '',
+    '— 汇报完毕 —'
+  ].join('\n')
+}
+
+function showReportTemplateModal(){
+  const current = STORE.reportTemplate.get() || getDefaultReportTemplate()
+  const varChips = REPORT_VARS.map(v =>
+    `<span class="tpl-v" onclick="insertTemplateVar('${v.var}')">{{${v.var}}}</span>`
+  ).join('')
+
+  showModal('汇报模板编辑', `
+    <div class="tpl-editor">
+      <div class="tpl-tabs">
+        <button class="tpl-tab tpl-tab-active" onclick="switchTplTab('edit')">编辑模板</button>
+        <button class="tpl-tab" onclick="switchTplTab('preview')">实时预览</button>
+      </div>
+      <div class="tpl-info">
+        编辑汇报文字模板，使用 <code>{{变量名}}</code> 引用数据。
+        点击下方变量标签可快速插入。
+      </div>
+      <div id="tplEditPanel">
+        <textarea id="reportTemplateInput" oninput="updateTplPreview()">${escapeHtml(current)}</textarea>
+        <div class="tpl-vars">${varChips}</div>
+      </div>
+      <div id="tplPreviewPanel" style="display:none">
+        <div class="rpt" id="tplPreviewContent"></div>
+      </div>
+      <div class="tpl-actions">
+        <button class="tpl-cancel" onclick="hideModal()">取消</button>
+        <button class="tpl-reset" onclick="resetReportTemplate()">恢复默认</button>
+        <button class="tpl-save" onclick="saveReportTemplate()">保存模板</button>
+      </div>
+    </div>
+  `)
+  setTimeout(() => {
+    updateTplPreview()
+  }, 100)
+}
+
+function escapeHtml(str){
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+}
+
+function insertTemplateVar(varName){
+  const ta = document.getElementById('reportTemplateInput')
+  if(!ta) return
+  const start = ta.selectionStart
+  const end = ta.selectionEnd
+  const text = ta.value
+  ta.value = text.slice(0, start) + '{{' + varName + '}}' + text.slice(end)
+  ta.selectionStart = ta.selectionEnd = start + varName.length + 4
+  ta.focus()
+}
+
+function saveReportTemplate(){
+  const val = document.getElementById('reportTemplateInput').value
+  STORE.reportTemplate.set(val)
+  hideModal()
+  toast('汇报模板已保存')
+}
+
+function resetReportTemplate(){
+  const ta = document.getElementById('reportTemplateInput')
+  if(!ta) return
+  ta.value = getDefaultReportTemplate()
+  updateTplPreview()
+  toast('已恢复默认模板')
+}
+
+function switchTplTab(tab){
+  document.querySelectorAll('.tpl-tab').forEach(t => t.classList.remove('tpl-tab-active'))
+  document.querySelector('.tpl-tab[onclick="switchTplTab(\''+tab+'\')"]').classList.add('tpl-tab-active')
+  document.getElementById('tplEditPanel').style.display = tab === 'edit' ? 'block' : 'none'
+  document.getElementById('tplPreviewPanel').style.display = tab === 'preview' ? 'block' : 'none'
+  if(tab === 'preview'){
+    updateTplPreview()
+  }
+}
+
+function updateTplPreview(){
+  const template = document.getElementById('reportTemplateInput')?.value || getDefaultReportTemplate()
+  const now = new Date()
+  const q = Math.floor(now.getMonth() / 3)
+  const startDate = new Date(now.getFullYear(), q * 3, 1)
+  const endDate = new Date(now.getFullYear(), (q + 1) * 3, 1)
+  const periodLabel = now.getFullYear() + '年第' + (q + 1) + '季度'
+  const vars = computeTemplateData(startDate.getTime(), endDate.getTime(), periodLabel)
+  const preview = applyTemplate(template, vars)
+  const previewEl = document.getElementById('tplPreviewContent')
+  if(previewEl){
+    previewEl.textContent = preview
+    previewEl.scrollTop = 0
+  }
+}
+
+function computeTemplateData(start, end, periodLabel){
+  const now = new Date()
+  const staffAll = STORE.staff.get()
+  const duties = STORE.duties.get().filter(d => d.date >= start && d.date < end)
+  const teachings = STORE.teachings.get().filter(t => t.date >= start && t.date < end)
+  const allTeachings = STORE.teachings.get()
+  const bookings = STORE.bookings.get().filter(b => b.date >= start && b.date < end)
+  const ops = STORE.operations.get().filter(o => o.date >= start && o.date < end)
+
+  let dutyDetails = ''
+  if(duties.length > 0){
+    const staffMap = {}
+    duties.forEach(d => {
+      if(!staffMap[d.staffId]) staffMap[d.staffId] = {name:d.staffName, morning:0, evening:0, allday:0, total:0}
+      const s = staffMap[d.staffId]
+      s.total++
+      if(d.shiftType === 'MORNING') s.morning++
+      else if(d.shiftType === 'EVENING') s.evening++
+      else s.allday++
+    })
+    const sorted = Object.values(staffMap)
+    // Sort by total descending for consistency
+    sorted.sort((a,b) => b.total - a.total)
+    dutyDetails = sorted.map(s => {
+      const parts = []
+      if(s.morning) parts.push('早班 ' + s.morning + ' 次')
+      if(s.evening) parts.push('晚班 ' + s.evening + ' 次')
+      if(s.allday) parts.push('通班 ' + s.allday + ' 次')
+      return '· ' + s.name + '：' + parts.join('、') + '，合计 ' + s.total + ' 次'
+    }).join('\n')
+  }
+
+  const dutyMorning = duties.filter(d => d.shiftType === 'MORNING').length
+  const dutyEvening = duties.filter(d => d.shiftType === 'EVENING').length
+  const dutyAllday = duties.filter(d => d.shiftType === 'ALL_DAY').length
+
+  let teachDetails = ''
+  if(teachings.length > 0){
+    const staffMap = {}
+    teachings.forEach(t => {
+      if(!staffMap[t.staffId]) staffMap[t.staffId] = {name:t.staffName, hours:0, count:0, participants:0, staffId:t.staffId}
+      const s = staffMap[t.staffId]
+      s.hours += t.hours; s.count++; s.participants += t.participantCount
+    })
+    const sorted = Object.values(staffMap)
+    sorted.sort((a,b) => b.hours - a.hours)
+    teachDetails = sorted.map(s => {
+      const histHours = allTeachings.filter(t => t.staffId === s.staffId).reduce((h,t) => h + t.hours, 0)
+      return '· ' + s.name + '教练：授课 ' + s.count + ' 次，共 ' + s.hours.toFixed(1) + ' 课时，服务 ' + s.participants + ' 人次（历史累计 ' + histHours.toFixed(1) + ' 课时）'
+    }).join('\n')
+  }
+
+  let bookingDetails = ''
+  if(bookings.length > 0){
+    bookingDetails = bookings.map(b => {
+      const slotMap = {MORNING:'上午', AFTERNOON:'下午', FULL_DAY:'全天'}
+      const slot = slotMap[b.timeSlot] || ''
+      return '· ' + b.bookingSubject + '（' + b.zoneNames + '）：' + slot + '，' + b.participantCount + ' 人，对接人 ' + b.contactPerson
+    }).join('\n')
+  }
+
+  let opDetails = ''
+  if(ops.length > 0){
+    const sorted = [...ops].sort((a,b) => (a.year-b.year)||(a.monthNumber-b.monthNumber))
+    opDetails = sorted.map(o => '· ' + o.year + '年' + o.monthNumber + '月：入馆 ' + o.totalVisitors + ' 人' + (o.remark ? '（' + o.remark + '）' : '')).join('\n')
+  }
+
+  const dutyCount = duties.length
+  const dutyStaffCount = new Set(duties.map(d => d.staffId)).size
+  const teachCount = teachings.length
+  const totalHours = teachings.reduce((s,t) => s + t.hours, 0)
+  const totalParts = teachings.reduce((s,t) => s + t.participantCount, 0)
+  const teachStaffCount = new Set(teachings.map(t => t.staffId)).size
+  const bookCount = bookings.length
+  const bookUniqueZones = new Set()
+  bookings.forEach(b => (b.zoneNames||'').split('、').filter(Boolean).forEach(z => bookUniqueZones.add(z)))
+  const bookTotalParts = bookings.reduce((s,b) => s + b.participantCount, 0)
+  const totalVisitors = ops.reduce((s,o) => s + o.totalVisitors, 0)
+  const opWeeks = ops.length
+  const opAvg = opWeeks > 0 ? Math.round(totalVisitors / opWeeks) : 0
+
+  let dutyCountText = '本季度暂无值班记录。'
+  if(dutyCount > 0){
+    dutyCountText = '本季度共计值班 ' + dutyCount + ' 人次，参与值班工作人员 ' + dutyStaffCount + ' 名。'
+  }
+
+  let teachCountText = '本季度暂无授课记录。'
+  if(teachCount > 0){
+    teachCountText = '本季度共授课 ' + teachCount + ' 次，总课时 ' + totalHours.toFixed(1) + ' 课时，累计服务学员 ' + totalParts + ' 人次。'
+  }
+
+  let bookingCountText = '本季度暂无外部预约记录。'
+  if(bookCount > 0){
+    bookingCountText = '本季度共接待外部预约 ' + bookCount + ' 场次，覆盖 ' + bookUniqueZones.size + ' 个功能区。'
+  }
+
+  let opSummaryText = '本季度暂无运营记录。'
+  if(opWeeks > 0){
+    opSummaryText = '本季度累计入馆 ' + totalVisitors + ' 人次，运营记录共 ' + opWeeks + ' 周，平均每周到访约 ' + opAvg + ' 人。'
+  }
+
+  let conclusionParts = ['本季度场馆运营整体平稳有序。']
+  if(dutyCount > 0) conclusionParts.push('值班安排合理，共计 ' + dutyStaffCount + ' 名工作人员参与值班。')
+  if(teachCount > 0) conclusionParts.push('授课任务按计划完成，教练团队累计授课 ' + totalHours.toFixed(1) + ' 课时。')
+  if(bookCount > 0) conclusionParts.push('外部预约接待工作有序推进，共服务 ' + bookTotalParts + ' 人次。')
+  if(opWeeks > 0) conclusionParts.push('场馆客流量稳定，平均每周接待访客约 ' + opAvg + ' 人。')
+  const conclusionText = conclusionParts.join('\n')
+
+  const vars = {
+    period: periodLabel,
+    date: now.getFullYear() + '年' + (now.getMonth() + 1) + '月' + now.getDate() + '日',
+    duty_count: String(dutyCount),
+    duty_staff_count: String(dutyStaffCount),
+    duty_morning: String(dutyMorning),
+    duty_evening: String(dutyEvening),
+    duty_allday: String(dutyAllday),
+    duty_details: dutyDetails,
+    duty_count_text: dutyCountText,
+    teach_count: String(teachCount),
+    teach_hours: totalHours.toFixed(1),
+    teach_participants: String(totalParts),
+    teach_staff_count: String(teachStaffCount),
+    teach_details: teachDetails,
+    teach_count_text: teachCountText,
+    booking_count: String(bookCount),
+    booking_zones_count: String(bookUniqueZones.size),
+    booking_total_participants: String(bookTotalParts),
+    booking_details: bookingDetails,
+    booking_count_text: bookingCountText,
+    visitor_total: String(totalVisitors),
+    op_weeks: String(opWeeks),
+    op_avg_visitors: String(opAvg),
+    op_details: opDetails,
+    op_summary_text: opSummaryText,
+    staff_count: String(staffAll.length),
+    conclusion_text: conclusionText
+  }
+  return vars
+}
+
+function applyTemplate(template, vars){
+  let result = template
+  for(const [key, val] of Object.entries(vars)){
+    result = result.replace(new RegExp('\\{\\{' + key + '\\}\\}', 'g'), val)
+  }
+  return result
+}
+
+// ===== TEXT REPORT =====
+function showTextReportModal(){
+  const now=new Date()
+  const q=Math.floor(now.getMonth()/3)
+  const qStart=new Date(now.getFullYear(),q*3,1)
+  const qEnd=new Date(now.getFullYear(),(q+1)*3,1)
+  showModal('文字汇报导出',`
+    <div class="mg"><label>选择汇报周期</label><div class="chips" id="rptPeriod">
+      <span class="chip sel" data-group="rptPeriod" data-val="quarter" onclick="selChip(this)">本季度</span>
+      <span class="chip" data-group="rptPeriod" data-val="lastQuarter" onclick="selChip(this)">上季度</span>
+      <span class="chip" data-group="rptPeriod" data-val="year" onclick="selChip(this)">本年度</span>
+      <span class="chip" data-group="rptPeriod" data-val="custom" onclick="selChip(this)" style="border-style:dashed">自定义</span>
+    </div></div>
+    <div class="mg" id="rptCustomRange" style="display:none">
+      <label>自定义日期范围</label>
+      <div style="display:flex;gap:8px">
+        <input type="date" id="rptStart" value="${qStart.toISOString().slice(0,10)}">
+        <input type="date" id="rptEnd" value="${new Date(qEnd.getTime()-86400000).toISOString().slice(0,10)}">
+      </div>
+    </div>
+    <div class="mg" id="rptPreviewArea" style="display:none">
+      <label>汇报预览</label>
+      <div class="rpt" id="rptContent"></div>
+    </div>
+    <div class="btns" id="rptActions" style="display:none">
+      <button class="btn-secondary-copy" onclick="copyReport()" style="flex:1;padding:14px;border-radius:30px;font-size:14px;font-weight:600;border:1px solid var(--border);cursor:pointer;background:var(--surface);color:var(--text)">📋 复制</button>
+      <button class="btn-confirm" onclick="downloadReport()" style="flex:1;padding:14px;border-radius:30px;font-size:14px;font-weight:600;border:none;cursor:pointer;background:var(--text);color:#fff">⬇ 下载</button>
+    </div>
+    <div class="btns">
+      <button class="btn-cancel" onclick="hideModal()" style="flex:1;padding:14px;border-radius:30px;font-size:14px;font-weight:600;border:none;cursor:pointer;background:var(--bg);color:var(--text2)">取消</button>
+      <button class="btn-confirm" onclick="generateTextReport()" style="flex:1;padding:14px;border-radius:30px;font-size:14px;font-weight:600;border:none;cursor:pointer;background:var(--text);color:#fff">生成汇报</button>
+    </div>
+  `)
+  window.__g.rptPeriod='quarter'
+}
+
+function generateTextReport(){
+  const p = window.__g.rptPeriod || 'quarter'
+  const now = new Date()
+  let startDate, endDate, periodLabel
+  if(p === 'quarter'){
+    const q = Math.floor(now.getMonth() / 3)
+    startDate = new Date(now.getFullYear(), q * 3, 1)
+    endDate = new Date(now.getFullYear(), (q + 1) * 3, 1)
+    periodLabel = now.getFullYear() + '年第' + (q + 1) + '季度'
+  }else if(p === 'lastQuarter'){
+    const q = Math.floor(now.getMonth() / 3) - 1
+    const y = q < 0 ? now.getFullYear() - 1 : now.getFullYear()
+    const sq = q < 0 ? 3 + q : q
+    startDate = new Date(y, sq * 3, 1)
+    endDate = new Date(y, (sq + 1) * 3, 1)
+    periodLabel = y + '年第' + (sq + 1) + '季度'
+  }else if(p === 'year'){
+    startDate = new Date(now.getFullYear(), 0, 1)
+    endDate = new Date(now.getFullYear() + 1, 0, 1)
+    periodLabel = now.getFullYear() + '年度'
+  }else{
+    startDate = new Date(document.getElementById('rptStart').value)
+    endDate = new Date(document.getElementById('rptEnd').value)
+    endDate.setDate(endDate.getDate() + 1)
+    periodLabel = startDate.getFullYear() + '年' + (startDate.getMonth() + 1) + '月-' + endDate.getFullYear() + '年' + (endDate.getMonth()) + '月'
+  }
+  const start = startDate.getTime(), end = endDate.getTime()
+
+  const vars = computeTemplateData(start, end, periodLabel)
+  const template = STORE.reportTemplate.get() || getDefaultReportTemplate()
+  const report = applyTemplate(template, vars)
+  window._lastReport = report
+
+  const rptEl = document.getElementById('rptContent')
+  rptEl.textContent = report
+  document.getElementById('rptPreviewArea').style.display = 'block'
+  document.getElementById('rptActions').style.display = 'flex'
+  rptEl.scrollTop = 0
+  toast('汇报生成完成')
+}
+
+function copyReport(){
+  if(!window._lastReport){toast('请先生成汇报');return}
+  navigator.clipboard.writeText(window._lastReport).then(()=>toast('已复制到剪贴板')).catch(()=>{
+    const ta=document.createElement('textarea')
+    ta.value=window._lastReport;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove()
+    toast('已复制到剪贴板')
+  })
+}
+
+function downloadReport(){
+  if(!window._lastReport){toast('请先生成汇报');return}
+  const blob=new Blob([window._lastReport],{type:'text/plain;charset=utf-8'})
+  const url=URL.createObjectURL(blob)
+  const a=document.createElement('a')
+  a.href=url;a.download='工作量汇报_'+new Date().toISOString().slice(0,10)+'.txt'
+  a.click();URL.revokeObjectURL(url)
+  toast('汇报已下载')
+}
+
+// ===== DATA EXPORT/IMPORT =====
+function exportData(){
+  const data={
+    version:1,
+    exportedAt:new Date().toISOString(),
+    staff:STORE.staff.get(),
+    duties:STORE.duties.get(),
+    teachings:STORE.teachings.get(),
+    bookings:STORE.bookings.get(),
+    operations:STORE.operations.get(),
+    leaves:STORE.leaves.get(),
+    leaveTypes:STORE.leaveTypes.get(),
+    attendance:STORE.attendance.get(),
+    zones:STORE.zones.get(),
+    courseTypes:STORE.courseTypes.get()
+  }
+  const jsonStr=JSON.stringify(data,null,2)
+  if(window.AndroidBridge){
+    AndroidBridge.exportJson(jsonStr,'工作量数据备份_'+new Date().toISOString().slice(0,10))
+  }else{
+    const blob=new Blob([jsonStr],{type:'application/json'})
+    const url=URL.createObjectURL(blob)
+    const a=document.createElement('a')
+    a.href=url;a.download='工作量数据备份_'+new Date().toISOString().slice(0,10)+'.json'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+  toast('数据已导出')
+}
+
+function importDataClick(){
+  showDialog('导入数据','导入将覆盖当前所有数据，确定继续吗？',()=>{
+    const input=document.createElement('input')
+    input.type='file'
+    input.accept='.json'
+    input.style.position='fixed'
+    input.style.opacity='0'
+    input.style.pointerEvents='none'
+    document.body.appendChild(input)
+    input.onchange=function(e){
+      const file=e.target.files[0]
+      if(!file){document.body.removeChild(input);return}
+      const reader=new FileReader()
+      reader.onload=function(ev){
+        try{
+          const data=JSON.parse(ev.target.result)
+          if(!data.version){toast('文件格式错误：缺少版本号');document.body.removeChild(input);return}
+          var schemaErrors=validateImportSchema(data)
+          if(schemaErrors){
+            toast('数据格式错误：'+schemaErrors)
+            document.body.removeChild(input)
+            return
+          }
+          __g._importBackup={
+            staff:STORE.staff.get(),
+            duties:STORE.duties.get(),
+            teachings:STORE.teachings.get(),
+            bookings:STORE.bookings.get(),
+            operations:STORE.operations.get(),
+            leaves:STORE.leaves.get(),
+            leaveTypes:STORE.leaveTypes.get(),
+            attendance:STORE.attendance.get(),
+            zones:STORE.zones.get(),
+            courseTypes:STORE.courseTypes.get()
+          }
+          if(data.staff){STORE.staff.set(data.staff)}
+          if(data.duties){STORE.duties.set(data.duties)}
+          if(data.teachings){STORE.teachings.set(data.teachings)}
+          if(data.bookings){STORE.bookings.set(data.bookings)}
+          if(data.operations){STORE.operations.set(data.operations)}
+          if(data.leaves){STORE.leaves.set(data.leaves)}
+          if(data.leaveTypes){STORE.leaveTypes.set(data.leaveTypes)}
+          if(data.attendance){STORE.attendance.set(data.attendance)}
+          if(data.zones){STORE.zones.set(data.zones)}
+          if(data.courseTypes){STORE.courseTypes.set(data.courseTypes)}
+          __g._importBackup=null
+          toast('数据导入成功')
+        }catch(e){
+          if(__g._importBackup){
+            if(__g._importBackup.staff)STORE.staff.set(__g._importBackup.staff)
+            if(__g._importBackup.duties)STORE.duties.set(__g._importBackup.duties)
+            if(__g._importBackup.teachings)STORE.teachings.set(__g._importBackup.teachings)
+            if(__g._importBackup.bookings)STORE.bookings.set(__g._importBackup.bookings)
+            if(__g._importBackup.operations)STORE.operations.set(__g._importBackup.operations)
+            if(__g._importBackup.leaves)STORE.leaves.set(__g._importBackup.leaves)
+            if(__g._importBackup.leaveTypes)STORE.leaveTypes.set(__g._importBackup.leaveTypes)
+            if(__g._importBackup.attendance)STORE.attendance.set(__g._importBackup.attendance)
+            if(__g._importBackup.zones)STORE.zones.set(__g._importBackup.zones)
+            if(__g._importBackup.courseTypes)STORE.courseTypes.set(__g._importBackup.courseTypes)
+            __g._importBackup=null
+          }
+          toast('导入失败，数据已恢复')
+        }
+        document.body.removeChild(input)
+      };reader.readAsText(file)
+    };input.click()
+  })
+}
+
+function validateImportSchema(data){
+  if(!data||typeof data!=='object')return'无效的数据格式'
+  var rules=[
+    {key:'staff',check:function(arr){
+      if(!Array.isArray(arr))return true
+      for(var i=0;i<arr.length;i++){
+        var item=arr[i]
+        if(!item||typeof item.id!=='string'||!item.id)return'staff['+i+'] 缺少有效 id'
+        if(typeof item.name!=='string'||!item.name)return'staff['+i+'] 缺少有效 name'
+      }
+    }},
+    {key:'duties',check:function(arr){
+      if(!Array.isArray(arr))return true
+      for(var i=0;i<arr.length;i++){
+        var item=arr[i]
+        if(!item||typeof item.id!=='string')return'duties['+i+'] 缺少有效 id'
+        if(typeof item.date!=='number')return'duties['+i+'] date 不是有效数字'
+      }
+    }},
+    {key:'teachings',check:function(arr){
+      if(!Array.isArray(arr))return true
+      for(var i=0;i<arr.length;i++){
+        var item=arr[i]
+        if(!item||typeof item.id!=='string')return'teachings['+i+'] 缺少有效 id'
+        if(typeof item.date!=='number')return'teachings['+i+'] date 不是有效数字'
+      }
+    }},
+    {key:'bookings',check:function(arr){
+      if(!Array.isArray(arr))return true
+      for(var i=0;i<arr.length;i++){
+        var item=arr[i]
+        if(!item||typeof item.id!=='string')return'bookings['+i+'] 缺少有效 id'
+        if(typeof item.date!=='number')return'bookings['+i+'] date 不是有效数字'
+      }
+    }},
+    {key:'operations',check:function(arr){
+      if(!Array.isArray(arr))return true
+      for(var i=0;i<arr.length;i++){
+        var item=arr[i]
+        if(!item||typeof item.id!=='string')return'operations['+i+'] 缺少有效 id'
+        if(typeof item.totalVisitors!=='number')return'operations['+i+'] totalVisitors 不是有效数字'
+      }
+    }},
+    {key:'zones',check:function(arr){
+      if(!Array.isArray(arr))return true
+      for(var i=0;i<arr.length;i++){
+        if(typeof arr[i]!=='string')return'zones['+i+'] 不是字符串'
+      }
+    }},
+    {key:'courseTypes',check:function(arr){
+      if(!Array.isArray(arr))return true
+      for(var i=0;i<arr.length;i++){
+        if(typeof arr[i]!=='string')return'courseTypes['+i+'] 不是字符串'
+      }
+    }},
+    {key:'leaves',check:function(arr){
+      if(!Array.isArray(arr))return true
+      for(var i=0;i<arr.length;i++){
+        var item=arr[i]
+        if(!item||typeof item.id!=='string')return'leaves['+i+'] 缺少有效 id'
+        if(typeof item.staffId!=='string')return'leaves['+i+'] 缺少有效 staffId'
+        if(typeof item.startTime!=='number')return'leaves['+i+'] startTime 不是有效数字'
+      }
+    }},
+    {key:'attendance',check:function(arr){
+      if(!Array.isArray(arr))return true
+      for(var i=0;i<arr.length;i++){
+        var item=arr[i]
+        if(!item||typeof item.id!=='string')return'attendance['+i+'] 缺少有效 id'
+        if(typeof item.staffId!=='string')return'attendance['+i+'] 缺少有效 staffId'
+        if(typeof item.date!=='number')return'attendance['+i+'] date 不是有效数字'
+      }
+    }},
+    {key:'leaveTypes',check:function(obj){
+      if(!obj||typeof obj!=='object')return true
+    }}
+  ]
+  for(var r=0;r<rules.length;r++){
+    var rule=rules[r]
+    if(data[rule.key]!==undefined){
+      var err=rule.check(data[rule.key])
+      if(err)return err
+    }
+  }
+  return null
+}
+
+// ===== INIT =====
+renderWork()
+renderCalendar()
+renderLeaves()
+renderAttendance()
+
+// Register service worker for PWA (skip in native Android app)
+if ('serviceWorker' in navigator && !window.AndroidBridge) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('sw.js').then(function(reg) {
+      console.log('SW registered, scope:', reg.scope)
+    }).catch(function(err) {
+      console.warn('SW registration failed:', err)
+    })
+  })
+}
+
+// ===== LEAVE RECORDS =====
+let leaveFilter=0
+function switchLeaveFilter(i){
+  document.querySelectorAll('#leavePills .pill').forEach((p,idx)=>p.classList.toggle('active',idx===i))
+  leaveFilter=i
+  renderLeaves()
+}
+
+function getLeaveFilterRange(){
+  const now=new Date()
+  const today=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime()
+  if(leaveFilter===0){return {start:0,end:9999999999999}}
+  if(leaveFilter===1){
+    const mStart=new Date(now.getFullYear(),now.getMonth(),1).getTime()
+    const mEnd=new Date(now.getFullYear(),now.getMonth()+1,1).getTime()
+    return {start:mStart,end:mEnd}
+  }
+  const yStart=new Date(now.getFullYear(),0,1).getTime()
+  const yEnd=new Date(now.getFullYear()+1,0,1).getTime()
+  return {start:yStart,end:yEnd}
+}
+
+function renderLeaves(){
+  const {start,end}=getLeaveFilterRange()
+  const leaves=STORE.leaves.get().filter(l=>l.startTime>=start&&l.startTime<end).sort((a,b)=>b.startTime-a.startTime)
+  const staff=STORE.staff.get()
+  const leaveTypes=STORE.leaveTypes.get()
+  const list=document.getElementById('leaveList')
+  
+  const todayStart=today()
+  const todayEnd=todayStart+86400000
+  const todayLeaves=STORE.leaves.get().filter(l=>l.startTime>=todayStart&&l.startTime<todayEnd)
+  const leaveBadge=document.getElementById('leaveBadge')
+  leaveBadge.textContent=todayLeaves.length>99?'99+':todayLeaves.length
+  leaveBadge.style.display=todayLeaves.length?'inline':'none'
+  
+  if(leaves.length===0){
+    list.innerHTML='<div class="empty"><div class="icon">📅</div>暂无请假记录</div>'
+    return
+  }
+  list.innerHTML=leaves.map(l=>{
+    const s=staff.find(x=>x.id===l.staffId)
+    const staffName=s?s.name:'- '
+    const typeInfo=leaveTypes[l.type]||{name:'其他',icon:'📍',color:'#6b7280'}
+    const sd=new Date(l.startTime)
+    const ed=new Date(l.endTime)
+    const fmtDate=function(d){return d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日'}
+    const fmtTime=function(d){return pad(d.getHours())+':'+pad(d.getMinutes())}
+    const dateStr=fmtDate(sd)+(dateKey(sd)===dateKey(ed)?'':' - '+fmtDate(ed))
+    const timeStr=fmtTime(sd)+' - '+fmtTime(ed)
+    return `<div class="row" onclick="">
+      <div class="rd">
+        <div class="d">${typeInfo.icon}</div>
+        <div class="m">${typeInfo.name}</div>
+      </div>
+      <div class="ri">
+        <div class="n">${escapeHtml(staffName)}</div>
+        <div class="meta">
+          <span>${dateStr}</span>
+          <span>${timeStr}</span>
+          ${l.hours?`<span class="tag tag-purple">${l.hours} 小时</span>`:''}
+          <span class="del" onclick="event.stopPropagation();deleteLeave('${l.id}')">删除</span>
+        </div>
+        ${l.reason?`<div style="font-size:12px;color:var(--text2);margin-top:6px;">${escapeHtml(l.reason)}</div>`:''}
+      </div>
+    </div>`
+  }).join('')
+}
+
+function showLeaveModal(){
+  const staff=STORE.staff.get()
+  const leaveTypes=STORE.leaveTypes.get()
+  const staffChips=staff.map((s,i)=>`<span class="stf ${i===0?'sel':''}" data-id="${s.id}" onclick="selLeaveStaff(this)">${escapeHtml(s.name)}</span>`).join('')
+  const typeChips=Object.entries(leaveTypes).map(([k,v],i)=>`<span class="chip ${i===0?'sel':''}" data-group="leaveType" data-val="${k}" onclick="selChip(this)">${v.icon} ${v.name}</span>`).join('')
+  const now=new Date()
+  const defaultStart=new Date(now.getFullYear(),now.getMonth(),now.getDate(),9,0).toISOString().slice(0,16)
+  const defaultEnd=new Date(now.getFullYear(),now.getMonth(),now.getDate(),18,0).toISOString().slice(0,16)
+  showModal('新增请假',`
+    <div class="mg"><label>人员</label><div class="staff-tags" id="leaveStaff">${staffChips||'<span style="color:var(--text3)">请先添加工作人员</span>'}</div></div>
+    <div class="mg"><label>请假类型</label><div class="chips" id="leaveType">${typeChips}</div></div>
+    <div class="mg"><label>开始时间</label><input type="datetime-local" id="leaveStart" value="${defaultStart}"></div>
+    <div class="mg"><label>结束时间</label><input type="datetime-local" id="leaveEnd" value="${defaultEnd}"></div>
+    <div class="mg"><label>请假时长（小时）</label><input type="number" id="leaveHours" value="8" step="0.5" min="0"></div>
+    <div class="mg"><label>请假事由</label><textarea id="leaveReason" placeholder="可选"></textarea></div>
+    <div class="btns"><button class="btn-cancel" onclick="hideModal()">取消</button><button class="btn-confirm" onclick="saveLeave()">保存</button></div>
+  `)
+}
+
+function selLeaveStaff(el){
+  document.querySelectorAll('#leaveStaff .stf').forEach(s=>s.classList.remove('sel'))
+  el.classList.add('sel')
+}
+
+function saveLeave(){
+  const staffEl=document.querySelector('#leaveStaff .stf.sel')
+  if(!staffEl){toast('请选择人员');return}
+  const staffId=staffEl.dataset.id
+  const staffName=staffEl.textContent
+  const typeEl=document.querySelector('#leaveType .chip.sel')
+  if(!typeEl){toast('请选择请假类型');return}
+  const leaveType=typeEl.dataset.val
+  const startVal=document.getElementById('leaveStart').value
+  const endVal=document.getElementById('leaveEnd').value
+  const reason=document.getElementById('leaveReason').value.trim()
+  let hours=parseFloat(document.getElementById('leaveHours').value)
+  if(!startVal||!endVal){toast('请选择起止时间');return}
+  const startTime=new Date(startVal).getTime()
+  const endTime=new Date(endVal).getTime()
+  if(startTime>=endTime){toast('结束时间必须大于开始时间');return}
+  if(!hours||hours<=0){
+    const diffHrs=(endTime-startTime)/(1000*60*60)
+    hours=Math.round(diffHrs*2)/2
+  }
+  const leaves=STORE.leaves.get()
+  leaves.unshift({id:uuid(),staffId,staffName,type:leaveType,startTime,endTime,hours,reason,createdAt:Date.now()})
+  STORE.leaves.set(leaves)
+  
+  createAttendanceForLeave(staffId, staffName, startTime, endTime, leaveType, reason)
+  
+  hideModal()
+  toast('请假记录已添加，考勤已同步')
+}
+
+function createAttendanceForLeave(staffId, staffName, leaveStartTime, leaveEndTime, leaveType, reason){
+  const startDate = new Date(leaveStartTime)
+  const endDate = new Date(leaveEndTime)
+  
+  const startDay = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate())
+  const endDay = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
+  
+  for(let d = new Date(startDay); d <= endDay; d.setDate(d.getDate() + 1)){
+    const dateTs = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+    
+    const existing = STORE.attendance.get().find(a => a.staffId === staffId && a.date === dateTs)
+    if(existing) continue
+    
+    const attendance = STORE.attendance.get()
+    attendance.unshift({
+      id:uuid(),
+      staffId,
+      staffName,
+      date: dateTs,
+      checkInTime: null,
+      checkOutTime: null,
+      status: 'leave',
+      remark: '请假: ' + reason,
+      createdAt: Date.now()
+    })
+    STORE.attendance.set(attendance)
+  }
+}
+
+function deleteLeave(id){
+  showDialog('删除请假记录','确定删除这条记录吗？',()=>{
+    __g._undo['leave_'+id]=STORE.leaves.get()
+    let leaves=STORE.leaves.get()
+    leaves=leaves.filter(l=>l.id!==id)
+    STORE.leaves.set(leaves)
+    showUndoToast('请假记录已删除','leave_'+id,()=>{
+      STORE.leaves.set(__g._undo['leave_'+id])
+      delete __g._undo['leave_'+id]
+    })
+  })
+}
+
+// ===== ATTENDANCE RECORDS =====
+let attendanceFilter=0
+function switchAttendanceFilter(i){
+  document.querySelectorAll('#attendancePills .pill').forEach((p,idx)=>p.classList.toggle('active',idx===i))
+  attendanceFilter=i
+  renderAttendance()
+}
+
+function getAttendanceFilterRange(){
+  const now=new Date()
+  const today=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime()
+  if(attendanceFilter===0){return {start:0,end:9999999999999}}
+  if(attendanceFilter===1){
+    const mStart=new Date(now.getFullYear(),now.getMonth(),1).getTime()
+    const mEnd=new Date(now.getFullYear(),now.getMonth()+1,1).getTime()
+    return {start:mStart,end:mEnd}
+  }
+  return {start:0,end:9999999999999,filterAbnormal:true}
+}
+
+function renderAttendance(){
+  const {start,end,filterAbnormal}=getAttendanceFilterRange()
+  let attendance=STORE.attendance.get().filter(a=>a.date>=start&&a.date<end).sort((a,b)=>b.date-a.date||b.createdAt-a.createdAt)
+  if(filterAbnormal){
+    attendance=attendance.filter(a=>a.status!=='normal')
+  }
+  const staff=STORE.staff.get()
+  const list=document.getElementById('attendanceList')
+  
+  const todayStart=today()
+  const todayEnd=todayStart+86400000
+  const todayAttendance=STORE.attendance.get().filter(a=>a.date>=todayStart&&a.date<todayEnd)
+  const attendanceBadge=document.getElementById('attendanceBadge')
+  attendanceBadge.textContent=todayAttendance.length>99?'99+':todayAttendance.length
+  attendanceBadge.style.display=todayAttendance.length?'inline':'none'
+  
+  if(attendance.length===0){
+    list.innerHTML='<div class="empty"><div class="icon">🕒</div>暂无考勤记录</div>'
+    return
+  }
+  const statusMap={
+    normal:{name:'正常',tag:'tag-green'},
+    late:{name:'迟到',tag:'tag-orange'},
+    early:{name:'早退',tag:'tag-orange'},
+    absent:{name:'缺勤',tag:'tag-red'},
+    leave:{name:'请假',tag:'tag-purple'}
+  }
+  list.innerHTML=attendance.map(a=>{
+    const s=staff.find(x=>x.id===a.staffId)
+    const staffName=s?s.name:'- '
+    const st=statusMap[a.status]||{name:a.status,tag:''}
+    const d=new Date(a.date)
+    const dateStr=d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日'
+    const fmtTime=function(ts){if(!ts)return'-';const t=new Date(ts);return pad(t.getHours())+':'+pad(t.getMinutes())}
+    return `<div class="row" onclick="">
+      <div class="rd">
+        <div class="d">${d.getDate()}</div>
+        <div class="m">${['周日','周一','周二','周三','周四','周五','周六'][d.getDay()]}</div>
+      </div>
+      <div class="ri">
+        <div class="n">${escapeHtml(staffName)}</div>
+        <div class="meta">
+          <span>${dateStr}</span>
+          <span>签到: ${fmtTime(a.checkInTime)}</span>
+          ${a.checkOutTime?`<span>签退: ${fmtTime(a.checkOutTime)}</span>`:''}
+          <span class="tag ${st.tag}">${st.name}</span>
+          <span class="del" onclick="event.stopPropagation();deleteAttendance('${a.id}')">删除</span>
+        </div>
+        ${a.remark?`<div style="font-size:12px;color:var(--text2);margin-top:6px;">${escapeHtml(a.remark)}</div>`:''}
+      </div>
+    </div>`
+  }).join('')
+}
+
+function showAttendanceModal(){
+  const staff=STORE.staff.get()
+  const staffChips=staff.map((s,i)=>`<span class="stf ${i===0?'sel':''}" data-id="${s.id}" onclick="selAttendanceStaff(this)">${escapeHtml(s.name)}</span>`).join('')
+  const now=new Date()
+  const defaultDate=new Date(now.getFullYear(),now.getMonth(),now.getDate()).toISOString().slice(0,10)
+  showModal('新增考勤',`
+    <div class="mg"><label>人员</label><div class="staff-tags" id="attendanceStaff">${staffChips||'<span style="color:var(--text3)">请先添加工作人员</span>'}</div></div>
+    <div class="mg"><label>考勤日期</label><input type="date" id="attendanceDate" value="${defaultDate}"></div>
+    <div class="mg"><label>签到时间</label><input type="time" id="checkInTime" value="${pad(now.getHours())}:${pad(now.getMinutes())}"></div>
+    <div class="mg"><label>签退时间（可选）</label><input type="time" id="checkOutTime"></div>
+    <div class="mg"><label>考勤状态</label><div class="chips" id="attendanceStatus">
+      <span class="chip sel" data-group="attendanceStatus" data-val="normal" onclick="selChip(this)">正常</span>
+      <span class="chip" data-group="attendanceStatus" data-val="late" onclick="selChip(this)">迟到</span>
+      <span class="chip" data-group="attendanceStatus" data-val="early" onclick="selChip(this)">早退</span>
+      <span class="chip" data-group="attendanceStatus" data-val="absent" onclick="selChip(this)">缺勤</span>
+      <span class="chip" data-group="attendanceStatus" data-val="leave" onclick="selChip(this)">请假</span>
+    </div></div>
+    <div class="mg"><label>备注</label><input type="text" id="attendanceRemark" placeholder="可选"></div>
+    <div class="btns"><button class="btn-cancel" onclick="hideModal()">取消</button><button class="btn-confirm" onclick="saveAttendance()">保存</button></div>
+  `)
+}
+
+function selAttendanceStaff(el){
+  document.querySelectorAll('#attendanceStaff .stf').forEach(s=>s.classList.remove('sel'))
+  el.classList.add('sel')
+}
+
+function saveAttendance(){
+  const staffEl=document.querySelector('#attendanceStaff .stf.sel')
+  if(!staffEl){toast('请选择人员');return}
+  const staffId=staffEl.dataset.id
+  const staffName=staffEl.textContent
+  const dateVal=document.getElementById('attendanceDate').value
+  if(!dateVal){toast('请选择考勤日期');return}
+  const statusEl=document.querySelector('#attendanceStatus .chip.sel')
+  const status=statusEl?statusEl.dataset.val:'normal'
+  const checkInVal=document.getElementById('checkInTime').value
+  const checkOutVal=document.getElementById('checkOutTime').value
+  const remark=document.getElementById('attendanceRemark').value.trim()
+  const date=new Date(dateVal).getTime()
+  let checkInTime=null,checkOutTime=null
+  if(checkInVal){
+    const [h,m]=checkInVal.split(':').map(Number)
+    const d=new Date(dateVal)
+    d.setHours(h,m,0,0)
+    checkInTime=d.getTime()
+  }
+  if(checkOutVal){
+    const [h,m]=checkOutVal.split(':').map(Number)
+    const d=new Date(dateVal)
+    d.setHours(h,m,0,0)
+    checkOutTime=d.getTime()
+  }
+  const attendance=STORE.attendance.get()
+  attendance.unshift({id:uuid(),staffId,staffName,date,checkInTime,checkOutTime,status,remark,createdAt:Date.now()})
+  STORE.attendance.set(attendance)
+  hideModal()
+  toast('考勤记录已添加')
+}
+
+function deleteAttendance(id){
+  showDialog('删除考勤记录','确定删除这条记录吗？',()=>{
+    __g._undo['att_'+id]=STORE.attendance.get()
+    let attendance=STORE.attendance.get()
+    attendance=attendance.filter(a=>a.id!==id)
+    STORE.attendance.set(attendance)
+    showUndoToast('考勤记录已删除','att_'+id,()=>{
+      STORE.attendance.set(__g._undo['att_'+id])
+      delete __g._undo['att_'+id]
+    })
+  })
+}
+
+// ===== INIT =====
+renderWork()
+renderCalendar()
+renderLeaves()
+renderAttendance()
+
+// Register service worker for PWA (skip in native Android app)
+if(!window.AndroidBridge&&'serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(e=>{})
+}
+
+</script>
+</body>
+</html>

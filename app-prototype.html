@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Workload Tracker</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg:#ffffff;
+    --bg2:#f5f5f7;
+    --surface:#ffffff;
+    --border:#e5e5ea;
+    --text:#1d1d1f;
+    --text2:#6e6e73;
+    --text3:#aeaeb2;
+    --accent:#0071e3;
+    --radius:14px;
+    --shadow:0 2px 14px rgba(0,0,0,0.04),0 1px 3px rgba(0,0,0,0.02);
+  }
+  html,body{width:100%;min-height:100vh;background:var(--bg2);font-family:'Inter',-apple-system,sans-serif;color:var(--text);-webkit-font-smoothing:antialiased}
+  body{display:flex;flex-direction:column;align-items:center;padding:32px 16px 48px}
+
+  .header{text-align:center;margin-bottom:32px;max-width:480px}
+  .header h1{font-size:30px;font-weight:700;color:var(--text);letter-spacing:-0.6px}
+  .header p{font-size:14px;color:var(--text2);margin-top:6px}
+
+  .frame{width:100%;max-width:400px;background:var(--surface);border-radius:28px;overflow:hidden;margin-bottom:28px;box-shadow:0 8px 30px rgba(0,0,0,0.06);position:relative}
+
+  .notch{height:30px;background:var(--surface);display:flex;align-items:center;justify-content:center;position:relative;border-bottom:1px solid var(--border)}
+  .notch .time{font-size:11px;font-weight:700;color:var(--text)}
+  .notch .dynamic{position:absolute;right:18px;width:52px;height:16px;background:var(--bg2);border-radius:8px;display:flex;align-items:center;justify-content:center;gap:3px}
+  .notch .dynamic span{width:3px;height:3px;border-radius:50%;background:var(--text3)}
+  .notch .dynamic span.on{background:#34c759}
+
+  .hdr{display:flex;justify-content:space-between;align-items:center;padding:14px 20px 10px}
+  .hdr h2{font-size:20px;font-weight:700;color:var(--text);letter-spacing:-0.3px}
+  .hdr .hdr-icon{font-size:13px;color:var(--accent);font-weight:600;padding:6px 14px;border-radius:30px;background:rgba(0,113,227,0.08);border:1px solid rgba(0,113,227,0.12)}
+
+  .tabbar{display:flex;border-top:1px solid var(--border);padding:6px 0 12px;background:var(--surface)}
+  .tabbar .tab{flex:1;text-align:center;font-size:10px;color:var(--text3);padding:2px 0;font-weight:500}
+  .tabbar .tab .icon{width:22px;height:22px;margin:0 auto 2px;color:inherit;display:block}
+  .tabbar .tab.active{color:var(--accent)}
+
+  .c{padding:6px 20px 4px}
+
+  .pills{display:flex;gap:6px;margin-bottom:16px;overflow-x:auto}
+  .pills::-webkit-scrollbar{display:none}
+  .pill{padding:6px 16px;border-radius:30px;font-size:12px;font-weight:500;color:var(--text2);background:var(--bg2);white-space:nowrap;flex-shrink:0}
+  .pill.active{background:var(--text);color:#fff}
+
+  .sh{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .sh h3{font-size:16px;font-weight:700;color:var(--text);letter-spacing:-0.3px}
+  .sh .action{font-size:13px;color:var(--accent);font-weight:600}
+
+  .row{display:flex;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)}
+  .row:last-child{border-bottom:none}
+  .rd{text-align:center;min-width:46px;margin-right:12px}
+  .rd .d{font-size:18px;font-weight:700;color:var(--text);line-height:1.1}
+  .rd .m{font-size:11px;color:var(--text3)}
+  .ri{flex:1;min-width:0}
+  .ri .n{font-size:15px;font-weight:600;color:var(--text)}
+  .ri .meta{font-size:12px;color:var(--text2);margin-top:3px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+  .tag{padding:3px 10px;border-radius:8px;font-size:10px;font-weight:600}
+  .tag-blue{background:rgba(0,113,227,0.08);color:var(--accent)}
+  .tag-red{background:rgba(255,59,48,0.06);color:#ff3b30}
+  .tag-orange{background:rgba(255,149,0,0.08);color:#ff9500}
+  .tag-green{background:rgba(52,199,89,0.08);color:#34c759}
+  .tag-purple{background:rgba(88,86,214,0.08);color:#5856d6}
+
+  .btn-add{display:flex;align-items:center;justify-content:center;background:var(--text);color:#fff;border:none;border-radius:30px;padding:12px 20px;font-size:14px;font-weight:600;width:100%;margin:12px 0 6px}
+
+  .calh{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .calh .my{font-size:17px;font-weight:700;color:var(--text)}
+  .calh .cnav{display:flex;gap:10px}
+  .calh .cnav span{font-size:18px;color:var(--text2);padding:6px;border-radius:8px;background:var(--bg2);border:1px solid var(--border);width:32px;text-align:center}
+  .calg{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:14px}
+  .calg .wd{text-align:center;font-size:11px;color:var(--text3);padding:7px 0;font-weight:600}
+  .calg .cl{text-align:center;padding:6px 0;font-size:13px;color:var(--text2);width:32px;height:32px;margin:0 auto;display:flex;align-items:center;justify-content:center;border-radius:50%;position:relative}
+  .calg .cl.tdy{background:var(--accent);color:#fff;font-weight:700}
+  .calg .cl.ot{color:var(--text3);opacity:0.35}
+  .calg .cl.nt::after{content:'';position:absolute;bottom:3px;width:4px;height:4px;border-radius:50%;background:var(--accent)}
+
+  .etitle{font-size:13px;font-weight:600;color:var(--text2);margin:8px 0 8px;padding-top:10px;border-top:1px solid var(--border)}
+  .ev{display:flex;align-items:center;padding:9px 12px;background:var(--bg2);border-radius:var(--radius);margin-bottom:6px;border-left:3px solid var(--accent)}
+  .ev .et2{font-size:11px;color:var(--accent);font-weight:600;min-width:36px}
+  .ev .ei2{flex:1;margin-left:8px}
+  .ev .ei2 .m{font-size:13px;font-weight:600;color:var(--text)}
+  .ev .ei2 .s{font-size:11px;color:var(--text3)}
+
+  .subt{display:flex;gap:0;margin-bottom:14px;background:var(--bg2);border-radius:var(--radius);padding:3px}
+  .subt .st{flex:1;text-align:center;padding:8px 0;font-size:12px;font-weight:500;color:var(--text3);border-radius:7px}
+  .subt .st.act{background:var(--surface);color:var(--text);font-weight:600}
+
+  .prd{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+  .prd span{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:500;background:var(--bg2);border:1px solid var(--border);color:var(--text3)}
+  .prd span.act{background:var(--text);border-color:var(--text);color:#fff}
+
+  .hero{background:linear-gradient(135deg,#0071e3,#5856d6);border-radius:var(--radius);padding:18px;margin-bottom:14px}
+  .hero .hl{font-size:11px;opacity:0.8;font-weight:500;color:#fff}
+  .hero .hr{display:flex;justify-content:space-around;margin-top:12px}
+  .hero .hi{text-align:center;color:#fff}
+  .hero .hi .num{font-size:24px;font-weight:800}
+  .hero .hi .lb{font-size:10px;opacity:0.75}
+
+  .srow{display:flex;align-items:center;padding:11px 0;border-bottom:1px solid var(--border)}
+  .srow .sleft{flex:1}
+  .srow .sleft .sn{font-size:14px;font-weight:600;color:var(--text)}
+  .srow .sleft .sd{font-size:11px;color:var(--text3)}
+  .srow .scount{font-size:13px;font-weight:700;padding:5px 14px;border-radius:8px;background:rgba(0,113,227,0.06);color:var(--accent)}
+
+  .sg{margin-bottom:20px}
+  .sg .sgt{font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px;letter-spacing:0.5px;text-transform:uppercase}
+  .si{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--border)}
+  .si .sl{display:flex;align-items:center;gap:10px}
+  .si .sl .sii{width:20px;height:20px;color:var(--text3)}
+  .si .sl .sit{font-size:14px;color:var(--text);font-weight:500}
+  .si .sar{color:var(--text3)}
+
+  .footer{max-width:400px;text-align:center;padding:24px 20px;border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);margin-top:4px}
+  .footer p{font-size:13px;color:var(--text2);line-height:1.7}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Workload</h1>
+  <p>团队工作量记录系统</p>
+</div>
+
+<!-- SCREEN 1: HOME -->
+<div class="frame">
+  <div class="notch"><span class="time">9:41</span><div class="dynamic"><span class="on"></span><span></span></div></div>
+  <div class="hdr">
+    <h2>工作记录</h2>
+    <span class="hdr-icon">+ 新增</span>
+  </div>
+  <div class="c">
+    <div class="pills">
+      <span class="pill active">全部</span>
+      <span class="pill">今日</span>
+      <span class="pill">本周</span>
+      <span class="pill">本月</span>
+    </div>
+    <div class="sh">
+      <h3>今日记录</h3>
+      <span class="action">查看全部 →</span>
+    </div>
+    <div class="row">
+      <div class="rd"><div class="d">26</div><div class="m">5月</div></div>
+      <div class="ri"><div class="n">张三</div><div class="meta"><span class="tag tag-blue">值班</span><span class="tag tag-orange">早班</span> 08:00 – 16:00</div></div>
+    </div>
+    <div class="row">
+      <div class="rd"><div class="d">26</div><div class="m">5月</div></div>
+      <div class="ri"><div class="n">李四</div><div class="meta"><span class="tag tag-blue">值班</span><span class="tag tag-green">晚班</span> 14:00 – 22:00</div></div>
+    </div>
+    <div class="row">
+      <div class="rd"><div class="d">26</div><div class="m">5月</div></div>
+      <div class="ri"><div class="n">王教练</div><div class="meta"><span class="tag tag-red">授课</span> 私教课 · 2人 · 1.5 课时</div></div>
+    </div>
+  </div>
+  <div class="tabbar">
+    <div class="tab active">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <line x1="3" y1="9" x2="21" y2="9"/>
+        <line x1="3" y1="14" x2="15" y2="14"/>
+        <circle cx="19" cy="6" r="1.5" fill="currentColor"/>
+      </svg>
+      工作
+    </div>
+    <div class="tab">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="3" y="4" width="18" height="18" rx="2"/>
+        <rect x="5" y="8" width="14" height="14" stroke-width="0.5"/>
+        <line x1="5" y1="11" x2="19" y2="11" stroke-width="0.5"/>
+        <line x1="5" y1="14" x2="19" y2="14" stroke-width="0.5"/>
+        <line x1="5" y1="17" x2="19" y2="17" stroke-width="0.5"/>
+        <line x1="8" y1="8" x2="8" y2="22" stroke-width="0.5"/>
+        <line x1="11" y1="8" x2="11" y2="22" stroke-width="0.5"/>
+        <line x1="14" y1="8" x2="14" y2="22" stroke-width="0.5"/>
+        <line x1="17" y1="8" x2="17" y2="22" stroke-width="0.5"/>
+      </svg>
+      预约
+    </div>
+    <div class="tab">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="5" y="12" width="3" height="12" rx="1.5" fill="currentColor"/>
+        <rect x="10" y="8" width="3" height="16" rx="1.5" fill="currentColor"/>
+        <rect x="15" y="4" width="3" height="20" rx="1.5" fill="currentColor"/>
+        <rect x="20" y="10" width="3" height="14" rx="1.5" fill="currentColor"/>
+      </svg>
+      统计
+    </div>
+    <div class="tab">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="12" cy="12" r="8"/>
+        <path d="M12 4 L12 1 L14 3" stroke-linecap="round"/>
+        <path d="M20 12 L23 12 L21 14" stroke-linecap="round"/>
+        <circle cx="12" cy="12" r="3" fill="currentColor"/>
+      </svg>
+      管理
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN 2: CALENDAR -->
+<div class="frame">
+  <div class="notch"><span class="time">9:41</span><div class="dynamic"><span class="on"></span><span></span></div></div>
+  <div class="hdr">
+    <h2>预约日历</h2>
+    <span class="hdr-icon">+ 新增</span>
+  </div>
+  <div class="c">
+    <div class="calh">
+      <span class="my">2026 年 5 月</span>
+      <div class="cnav"><span>‹</span><span>›</span></div>
+    </div>
+    <div class="calg">
+      <div class="wd">一</div><div class="wd">二</div><div class="wd">三</div><div class="wd">四</div><div class="wd">五</div><div class="wd">六</div><div class="wd">日</div>
+      <div class="cl ot">27</div><div class="cl ot">28</div><div class="cl ot">29</div><div class="cl ot">30</div><div class="cl ot">1</div><div class="cl ot">2</div><div class="cl ot">3</div>
+      <div class="cl">4</div><div class="cl">5</div><div class="cl">6</div><div class="cl">7</div><div class="cl">8</div><div class="cl">9</div><div class="cl">10</div>
+      <div class="cl">11</div><div class="cl">12</div><div class="cl nt">13</div><div class="cl">14</div><div class="cl">15</div><div class="cl">16</div><div class="cl nt">17</div>
+      <div class="cl nt">18</div><div class="cl">19</div><div class="cl">20</div><div class="cl">21</div><div class="cl">22</div><div class="cl">23</div><div class="cl">24</div>
+      <div class="cl">25</div><div class="cl tdy nt">26</div><div class="cl">27</div><div class="cl">28</div><div class="cl">29</div><div class="cl">30</div><div class="cl">31</div>
+      <div class="cl ot">1</div><div class="cl ot">2</div><div class="cl ot">3</div><div class="cl ot">4</div><div class="cl ot">5</div><div class="cl ot">6</div><div class="cl ot">7</div>
+    </div>
+    <div class="etitle">5 月 26 日 · 3 个预约</div>
+    <div class="ev"><div class="et2">上午</div><div class="ei2"><div class="m">阳光小学 · 游泳区</div><div class="s">对接 张三 · 30 人</div></div></div>
+    <div class="ev" style="border-left-color:#ff9500"><div class="et2" style="color:#ff9500">下午</div><div class="ei2"><div class="m">科技公司 · 篮球场</div><div class="s">对接 李四 · 15 人</div></div></div>
+    <div class="ev" style="border-left-color:#34c759"><div class="et2" style="color:#34c759">全天</div><div class="ei2"><div class="m">王先生 · 羽毛球场</div><div class="s">对接 张三 · 4 人</div></div></div>
+    <div class="btn-add">+ 新增预约</div>
+  </div>
+  <div class="tabbar">
+    <div class="tab"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="14" x2="15" y2="14"/><circle cx="19" cy="6" r="1.5" fill="currentColor"/></svg>工作</div>
+    <div class="tab active"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><rect x="5" y="8" width="14" height="14" stroke-width="0.5"/><line x1="5" y1="11" x2="19" y2="11" stroke-width="0.5"/><line x1="5" y1="14" x2="19" y2="14" stroke-width="0.5"/><line x1="5" y1="17" x2="19" y2="17" stroke-width="0.5"/><line x1="8" y1="8" x2="8" y2="22" stroke-width="0.5"/><line x1="11" y1="8" x2="11" y2="22" stroke-width="0.5"/><line x1="14" y1="8" x2="14" y2="22" stroke-width="0.5"/><line x1="17" y1="8" x2="17" y2="22" stroke-width="0.5"/></svg>预约</div>
+    <div class="tab"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="12" width="3" height="12" rx="1.5" fill="currentColor"/><rect x="10" y="8" width="3" height="16" rx="1.5" fill="currentColor"/><rect x="15" y="4" width="3" height="20" rx="1.5" fill="currentColor"/><rect x="20" y="10" width="3" height="14" rx="1.5" fill="currentColor"/></svg>统计</div>
+    <div class="tab"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="8"/><path d="M12 4 L12 1 L14 3" stroke-linecap="round"/><path d="M20 12 L23 12 L21 14" stroke-linecap="round"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>管理</div>
+  </div>
+</div>
+
+<!-- SCREEN 3: STATS -->
+<div class="frame">
+  <div class="notch"><span class="time">9:41</span><div class="dynamic"><span class="on"></span><span></span></div></div>
+  <div class="hdr">
+    <h2>统计报表</h2>
+    <span class="hdr-icon">导出</span>
+  </div>
+  <div class="c">
+    <div class="subt">
+      <div class="st act">值班</div>
+      <div class="st">授课</div>
+      <div class="st">运营</div>
+    </div>
+    <div class="prd">
+      <span class="act">本季度</span>
+      <span>上季度</span>
+      <span>年度</span>
+      <span>自定义</span>
+    </div>
+    <div class="hero">
+      <div class="hl">2026 · 第 2 季度（4 月 – 6 月）</div>
+      <div class="hr">
+        <div class="hi"><div class="num">42</div><div class="lb">总值班人次</div></div>
+        <div class="hi"><div class="num">3</div><div class="lb">值班人员</div></div>
+      </div>
+    </div>
+    <div class="srow"><div class="sleft"><div class="sn">张三</div><div class="sd">早班 12 次 · 晚班 8 次 · 通班 3 次</div></div><div class="scount">23 次</div></div>
+    <div class="srow"><div class="sleft"><div class="sn">李四</div><div class="sd">早班 10 次 · 晚班 6 次 · 通班 1 次</div></div><div class="scount">17 次</div></div>
+    <div class="srow"><div class="sleft"><div class="sn">赵教练</div><div class="sd">早班 2 次</div></div><div class="scount">2 次</div></div>
+  </div>
+  <div class="tabbar">
+    <div class="tab"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="14" x2="15" y2="14"/><circle cx="19" cy="6" r="1.5" fill="currentColor"/></svg>工作</div>
+    <div class="tab"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><rect x="5" y="8" width="14" height="14" stroke-width="0.5"/><line x1="5" y1="11" x2="19" y2="11" stroke-width="0.5"/><line x1="5" y1="14" x2="19" y2="14" stroke-width="0.5"/><line x1="5" y1="17" x2="19" y2="17" stroke-width="0.5"/><line x1="8" y1="8" x2="8" y2="22" stroke-width="0.5"/><line x1="11" y1="8" x2="11" y2="22" stroke-width="0.5"/><line x1="14" y1="8" x2="14" y2="22" stroke-width="0.5"/><line x1="17" y1="8" x2="17" y2="22" stroke-width="0.5"/></svg>预约</div>
+    <div class="tab active"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="12" width="3" height="12" rx="1.5" fill="currentColor"/><rect x="10" y="8" width="3" height="16" rx="1.5" fill="currentColor"/><rect x="15" y="4" width="3" height="20" rx="1.5" fill="currentColor"/><rect x="20" y="10" width="3" height="14" rx="1.5" fill="currentColor"/></svg>统计</div>
+    <div class="tab"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="8"/><path d="M12 4 L12 1 L14 3" stroke-linecap="round"/><path d="M20 12 L23 12 L21 14" stroke-linecap="round"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>管理</div>
+  </div>
+</div>
+
+<!-- SCREEN 4: SETTINGS -->
+<div class="frame">
+  <div class="notch"><span class="time">9:41</span><div class="dynamic"><span class="on"></span><span></span></div></div>
+  <div class="hdr">
+    <h2>管理设置</h2>
+    <span class="hdr-icon">⚙️</span>
+  </div>
+  <div class="c">
+    <div class="sg">
+      <div class="sgt">人员与配置</div>
+      <div class="si"><div class="sl"><svg class="sii" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4" stroke-width="1.5"/><path d="M8 14 L8 20 M16 14 L16 20 M8 17 Q12 19 16 17" stroke-width="1.5" stroke-linecap="round"/></svg><span class="sit">工作人员管理</span></div><span class="sar">›</span></div>
+      <div class="si"><div class="sl"><svg class="sii" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 12 L12 4 L18 12" stroke-width="1.5" stroke-linecap="round"/><rect x="6" y="12" width="12" height="8" stroke-width="1.5"/></svg><span class="sit">功能区配置</span></div><span class="sar">›</span></div>
+      <div class="si"><div class="sl"><svg class="sii" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="4" width="14" height="16" rx="1" stroke-width="1.5"/><line x1="12" y1="4" x2="12" y2="20" stroke-width="0.5"/></svg><span class="sit">上课类型配置</span></div><span class="sar">›</span></div>
+    </div>
+    <div class="sg">
+      <div class="sgt">数据管理</div>
+      <div class="si"><div class="sl"><svg class="sii" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="8" width="12" height="10" stroke-width="1.5"/><path d="M6 8 L12 2 L18 8" stroke-width="1.5" stroke-linecap="round"/></svg><span class="sit">数据导出</span></div><span class="sar">›</span></div>
+      <div class="si"><div class="sl"><svg class="sii" viewBox="0 0 24 24" fill="currentColor"><path d="M12 20 Q6 16 6 10 Q6 6 10 6 Q12 6 12 8 Q12 6 14 6 Q18 6 18 10 Q18 16 12 20"/><path d="M12 10 L12 14" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg><span class="sit">备份与恢复</span></div><span class="sar">›</span></div>
+    </div>
+  </div>
+  <div class="tabbar">
+    <div class="tab"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="14" x2="15" y2="14"/><circle cx="19" cy="6" r="1.5" fill="currentColor"/></svg>工作</div>
+    <div class="tab"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><rect x="5" y="8" width="14" height="14" stroke-width="0.5"/><line x1="5" y1="11" x2="19" y2="11" stroke-width="0.5"/><line x1="5" y1="14" x2="19" y2="14" stroke-width="0.5"/><line x1="5" y1="17" x2="19" y2="17" stroke-width="0.5"/><line x1="8" y1="8" x2="8" y2="22" stroke-width="0.5"/><line x1="11" y1="8" x2="11" y2="22" stroke-width="0.5"/><line x1="14" y1="8" x2="14" y2="22" stroke-width="0.5"/><line x1="17" y1="8" x2="17" y2="22" stroke-width="0.5"/></svg>预约</div>
+    <div class="tab"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="12" width="3" height="12" rx="1.5" fill="currentColor"/><rect x="10" y="8" width="3" height="16" rx="1.5" fill="currentColor"/><rect x="15" y="4" width="3" height="20" rx="1.5" fill="currentColor"/><rect x="20" y="10" width="3" height="14" rx="1.5" fill="currentColor"/></svg>统计</div>
+    <div class="tab active"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="8"/><path d="M12 4 L12 1 L14 3" stroke-linecap="round"/><path d="M20 12 L23 12 L21 14" stroke-linecap="round"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>管理</div>
+  </div>
+</div>
+
+<div class="footer">
+  <p>使用 SVG 图标 · 极简专业风格</p>
+</div>
+
+</body>
+</html>

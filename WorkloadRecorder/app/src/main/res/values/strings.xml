@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">工作量记录</string>
+    <string name="work">工作</string>
+    <string name="booking">预约</string>
+    <string name="statistics">统计</string>
+    <string name="settings">管理</string>
+    <string name="add">新增</string>
+    <string name="export">导出</string>
+</resources>
