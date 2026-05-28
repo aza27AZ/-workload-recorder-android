@@ -250,6 +250,39 @@ body{display:flex;flex-direction:column}
 .tpl-tab{flex:1;padding:10px;border:none;border-radius:10px;font-size:13px;font-weight:500;color:var(--text2);background:var(--bg);cursor:pointer;transition:all .15s}
 .tpl-tab:hover{background:var(--accent-bg)}
 .tpl-tab-active{background:var(--text);color:#fff;font-weight:600}
+
+/* Calendar Component */
+.calendar-container{background:var(--surface);border-radius:var(--radius);padding:16px;border:1px solid var(--border);margin-bottom:16px}
+.calendar-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.calendar-nav{width:36px;height:36px;border:none;background:var(--bg);border-radius:10px;color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.calendar-nav:active{transform:scale(0.95);background:var(--accent-bg);color:var(--accent)}
+.calendar-title{font-size:16px;font-weight:700;color:var(--text)}
+.calendar-weekdays{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:8px}
+.calendar-weekday{text-align:center;font-size:11px;font-weight:600;color:var(--text3);padding:8px 0}
+.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.calendar-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:10px;cursor:pointer;transition:all .15s;position:relative;padding:4px}
+.calendar-day:hover{background:var(--bg)}
+.calendar-day:active{transform:scale(0.96)}
+.calendar-day.today{background:var(--accent-bg)}
+.calendar-day.today .calendar-date{color:var(--accent);font-weight:700}
+.calendar-day.other-month .calendar-date{color:var(--text3);opacity:0.4}
+.calendar-day.selected{background:var(--text)}
+.calendar-day.selected .calendar-date{color:#fff;font-weight:700}
+.calendar-date{font-size:14px;font-weight:500;color:var(--text);line-height:1;z-index:1}
+.calendar-markers{display:flex;gap:3px;margin-top:4px;z-index:1}
+.calendar-marker{width:6px;height:6px;border-radius:50%}
+.calendar-marker.morning{background:#ff9500}
+.calendar-marker.evening{background:#34c759}
+.calendar-marker.holiday{background:#5856d6}
+.calendar-legend{display:flex;gap:16px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);flex-wrap:wrap;justify-content:center}
+.calendar-legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2)}
+.calendar-legend-item .dot{width:10px;height:10px;border-radius:50%}
+.calendar-legend-item .dot.morning{background:#ff9500}
+.calendar-legend-item .dot.evening{background:#34c759}
+.calendar-legend-item .dot.holiday{background:#5856d6}
+
+/* Calendar Modal */
+.calendar-modal{max-width:90vw;width:360px}
 </style>
 </head>
 <body>
@@ -859,12 +892,27 @@ function showAddRecordModal(){
 }
 
 // ===== DUTY CRUD =====
-function showDutyModal(){
+let dutySelectedDate = null
+
+function formatDateDisplay(date){
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return y + '年' + m + '月' + d + '日'
+}
+
+function openDutyCalendar(){
+  hideModal()
+  showCalendarModal((selectedDate) => {
+    dutySelectedDate = selectedDate
+    showDutyModalAfterCalendar()
+  }, dutySelectedDate)
+}
+
+function showDutyModalAfterCalendar(){
   const staff=STORE.staff.get()
-  if(!staff.length){toast('请先在「管理」中添加工作人员');return}
   const staffChips=staff.map((s,i)=>'<span class="stf" data-id="'+s.id+'" onclick="selStaff(this,'+i+')">'+s.name+'</span>').join('')
-  const nowH=new Date().getHours()
-  const defShift=nowH<12?'MORNING':nowH<17?'EVENING':'ALL_DAY'
+  const defShift='MORNING'
   showModal('新增值班记录',`
     <div class="mg"><label>值班人员</label><div class="staff-tags" id="dutyStaff">${staffChips}</div></div>
     <div class="mg"><label>班次</label><div class="chips" id="dutyShift">
@@ -873,7 +921,42 @@ function showDutyModal(){
       <span class="chip ${defShift==='ALL_DAY'?'sel':''}" onclick="selChip(this,'dutyShift','ALL_DAY')">通班 <small>08:00-22:00</small></span>
     </div></div>
     <div class="mg"><label>时间</label><div style="display:flex;gap:8px"><input type="time" id="dutyStart" value="${defShift==='MORNING'?'08:00':defShift==='EVENING'?'14:00':'08:00'}"><input type="time" id="dutyEnd" value="${defShift==='MORNING'?'16:00':defShift==='EVENING'?'22:00':'22:00'}"></div></div>
-    <div class="mg"><label>日期</label><input type="date" id="dutyDate" value="${new Date().toISOString().slice(0,10)}"></div>
+    <div class="mg"><label>日期</label>
+      <div id="dutyDatePicker" style="padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center" onclick="openDutyCalendar()">
+        <span id="dutyDateDisplay">${formatDateDisplay(dutySelectedDate)}</span>
+        <span style="color:var(--text3)">📅</span>
+      </div>
+    </div>
+    <div class="mg"><label>备注</label><input type="text" id="dutyRemark" placeholder="可选"></div>
+    <div class="btns"><button class="btn-cancel" onclick="hideModal()">取消</button><button class="btn-confirm" onclick="saveDuty()">保存</button></div>
+  `)
+  setTimeout(()=>{
+    const sel=document.querySelectorAll('#dutyStaff .stf')
+    if(sel.length)sel[0].classList.add('sel')
+  },50)
+}
+
+function showDutyModal(){
+  const staff=STORE.staff.get()
+  if(!staff.length){toast('请先在「管理」中添加工作人员');return}
+  const staffChips=staff.map((s,i)=>'<span class="stf" data-id="'+s.id+'" onclick="selStaff(this,'+i+')">'+s.name+'</span>').join('')
+  const nowH=new Date().getHours()
+  const defShift=nowH<12?'MORNING':nowH<17?'EVENING':'ALL_DAY'
+  dutySelectedDate = new Date()
+  showModal('新增值班记录',`
+    <div class="mg"><label>值班人员</label><div class="staff-tags" id="dutyStaff">${staffChips}</div></div>
+    <div class="mg"><label>班次</label><div class="chips" id="dutyShift">
+      <span class="chip ${defShift==='MORNING'?'sel':''}" onclick="selChip(this,'dutyShift','MORNING')">早班 <small>08:00-16:00</small></span>
+      <span class="chip ${defShift==='EVENING'?'sel':''}" onclick="selChip(this,'dutyShift','EVENING')">晚班 <small>14:00-22:00</small></span>
+      <span class="chip ${defShift==='ALL_DAY'?'sel':''}" onclick="selChip(this,'dutyShift','ALL_DAY')">通班 <small>08:00-22:00</small></span>
+    </div></div>
+    <div class="mg"><label>时间</label><div style="display:flex;gap:8px"><input type="time" id="dutyStart" value="${defShift==='MORNING'?'08:00':defShift==='EVENING'?'14:00':'08:00'}"><input type="time" id="dutyEnd" value="${defShift==='MORNING'?'16:00':defShift==='EVENING'?'22:00':'22:00'}"></div></div>
+    <div class="mg"><label>日期</label>
+      <div id="dutyDatePicker" style="padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center" onclick="openDutyCalendar()">
+        <span id="dutyDateDisplay">${formatDateDisplay(dutySelectedDate)}</span>
+        <span style="color:var(--text3)">📅</span>
+      </div>
+    </div>
     <div class="mg"><label>备注</label><input type="text" id="dutyRemark" placeholder="可选"></div>
     <div class="btns"><button class="btn-cancel" onclick="hideModal()">取消</button><button class="btn-confirm" onclick="saveDuty()">保存</button></div>
   `)
@@ -927,7 +1010,7 @@ function saveDuty(){
   const shiftType=shiftEl?shiftEl.getAttribute('onclick').match(/'([^']+)'\)$/)[1]:'MORNING'
   const start=document.getElementById('dutyStart').value
   const end=document.getElementById('dutyEnd').value
-  const date=new Date(document.getElementById('dutyDate').value).getTime()
+  const date=dutySelectedDate.getTime()
   const remark=document.getElementById('dutyRemark').value
   if(!start||!end){toast('请选择时间');return}
   const duties=STORE.duties.get()
@@ -1998,6 +2081,173 @@ function importDataClick(){
       };reader.readAsText(file)
     };input.click()
   })
+}
+
+// ===== CALENDAR COMPONENT =====
+let calendarCurrentMonth = new Date()
+let calendarSelectedDate = null
+let calendarOnSelectCallback = null
+
+function getDutyMarkersForDate(dateMs){
+  const duties = STORE.duties.get()
+  const startOfDay = new Date(dateMs)
+  startOfDay.setHours(0,0,0,0)
+  const endOfDay = new Date(dateMs)
+  endOfDay.setHours(23,59,59,999)
+  
+  const dayDuties = duties.filter(d => d.date >= startOfDay.getTime() && d.date <= endOfDay.getTime())
+  const markers = new Set()
+  
+  dayDuties.forEach(d => {
+    if(d.shiftType === 'MORNING') markers.add('morning')
+    else if(d.shiftType === 'EVENING') markers.add('evening')
+    else if(d.shiftType === 'ALL_DAY'){ markers.add('morning'); markers.add('evening') }
+  })
+  
+  return Array.from(markers)
+}
+
+function renderCalendarComponent(containerId, options = {}){
+  const container = document.getElementById(containerId)
+  if(!container) return
+  
+  const showLegend = options.showLegend !== false
+  const selectedDate = options.selectedDate || calendarSelectedDate
+  const currentMonth = options.currentMonth || calendarCurrentMonth
+  
+  const year = currentMonth.getFullYear()
+  const month = currentMonth.getMonth()
+  const firstDay = new Date(year, month, 1)
+  const lastDay = new Date(year, month + 1, 0)
+  const startPadding = firstDay.getDay()
+  const today = new Date()
+  const todayKey = today.getFullYear() + '-' + today.getMonth() + '-' + today.getDate()
+  
+  let html = `
+    <div class="calendar-header">
+      <button class="calendar-nav" onclick="calendarPrevMonth('${containerId}', ${showLegend})">◀</button>
+      <div class="calendar-title">${year}年${month + 1}月</div>
+      <button class="calendar-nav" onclick="calendarNextMonth('${containerId}', ${showLegend})">▶</button>
+    </div>
+    <div class="calendar-weekdays">
+      <div class="calendar-weekday">日</div>
+      <div class="calendar-weekday">一</div>
+      <div class="calendar-weekday">二</div>
+      <div class="calendar-weekday">三</div>
+      <div class="calendar-weekday">四</div>
+      <div class="calendar-weekday">五</div>
+      <div class="calendar-weekday">六</div>
+    </div>
+    <div class="calendar-grid">
+  `
+  
+  for(let i = 0; i < startPadding; i++){
+    const prevMonthDay = new Date(year, month, -startPadding + i + 1)
+    const markers = getDutyMarkersForDate(prevMonthDay.getTime())
+    html += `<div class="calendar-day other-month">
+      <span class="calendar-date">${prevMonthDay.getDate()}</span>
+      ${renderDayMarkers(markers)}
+    </div>`
+  }
+  
+  for(let day = 1; day <= lastDay.getDate(); day++){
+    const currentDate = new Date(year, month, day)
+    const dateKey = year + '-' + month + '-' + day
+    const isToday = dateKey === todayKey
+    const isSelected = selectedDate && dateKey === (selectedDate.getFullYear() + '-' + selectedDate.getMonth() + '-' + selectedDate.getDate())
+    const markers = getDutyMarkersForDate(currentDate.getTime())
+    
+    let classes = 'calendar-day'
+    if(isToday) classes += ' today'
+    if(isSelected) classes += ' selected'
+    
+    html += `<div class="${classes}" onclick="calendarSelectDate('${containerId}', ${year}, ${month}, ${day}, ${showLegend})">
+      <span class="calendar-date">${day}</span>
+      ${renderDayMarkers(markers)}
+    </div>`
+  }
+  
+  const remainingDays = 42 - (startPadding + lastDay.getDate())
+  for(let i = 1; i <= remainingDays; i++){
+    const nextMonthDay = new Date(year, month + 1, i)
+    const markers = getDutyMarkersForDate(nextMonthDay.getTime())
+    html += `<div class="calendar-day other-month">
+      <span class="calendar-date">${i}</span>
+      ${renderDayMarkers(markers)}
+    </div>`
+  }
+  
+  html += '</div>'
+  
+  if(showLegend){
+    html += `
+      <div class="calendar-legend">
+        <div class="calendar-legend-item"><span class="dot morning"></span>早班</div>
+        <div class="calendar-legend-item"><span class="dot evening"></span>晚班</div>
+        <div class="calendar-legend-item"><span class="dot holiday"></span>假日班</div>
+      </div>
+    `
+  }
+  
+  container.innerHTML = html
+}
+
+function renderDayMarkers(markers){
+  if(markers.length === 0) return ''
+  return `<div class="calendar-markers">${markers.map(m => `<span class="calendar-marker ${m}"></span>`).join('')}</div>`
+}
+
+function calendarPrevMonth(containerId, showLegend){
+  calendarCurrentMonth.setMonth(calendarCurrentMonth.getMonth() - 1)
+  renderCalendarComponent(containerId, {showLegend})
+}
+
+function calendarNextMonth(containerId, showLegend){
+  calendarCurrentMonth.setMonth(calendarCurrentMonth.getMonth() + 1)
+  renderCalendarComponent(containerId, {showLegend})
+}
+
+function calendarSelectDate(containerId, year, month, day, showLegend){
+  calendarSelectedDate = new Date(year, month, day)
+  renderCalendarComponent(containerId, {showLegend})
+  
+  if(calendarOnSelectCallback){
+    calendarOnSelectCallback(calendarSelectedDate)
+  }
+}
+
+function showCalendarModal(onSelect, initialDate = null){
+  calendarOnSelectCallback = (date) => {
+    onSelect(date)
+    hideModal()
+  }
+  
+  if(initialDate){
+    calendarSelectedDate = new Date(initialDate)
+    calendarCurrentMonth = new Date(initialDate)
+  }else{
+    calendarSelectedDate = null
+    calendarCurrentMonth = new Date()
+  }
+  
+  showModal('选择日期', `
+    <div class="calendar-container">
+      <div id="calendar-modal-content"></div>
+    </div>
+    <div class="btns">
+      <button class="btn-cancel" onclick="hideModal()">取消</button>
+      ${calendarSelectedDate ? `<button class="btn-confirm" onclick="confirmCalendarSelection()">确认选择</button>` : ''}
+    </div>
+  `)
+  
+  setTimeout(() => renderCalendarComponent('calendar-modal-content', {showLegend: true}), 50)
+}
+
+function confirmCalendarSelection(){
+  if(calendarSelectedDate && calendarOnSelectCallback){
+    calendarOnSelectCallback(calendarSelectedDate)
+    hideModal()
+  }
 }
 
 // ===== INIT =====
